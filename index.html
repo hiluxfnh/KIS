@@ -26,27 +26,40 @@
 
     <main class="container">
         <section class="dashboard">
-            <div class="stats-card">
-                <i class="fas fa-truck"></i>
-                <h3>Camions actifs</h3>
-                <span id="active-trucks">12</span>
-            </div>
-            <div class="stats-card">
-                <i class="fas fa-gas-pump"></i>
-                <h3>Consommation moyenne</h3>
-                <span id="avg-consumption">8.2 L/100km</span>
-            </div>
-            <div class="stats-card">
-                <i class="fas fa-road"></i>
-                <h3>Km parcourus</h3>
-                <span id="total-distance">24,582 km</span>
-            </div>
-            <div class="stats-card">
-                <i class="fas fa-user-clock"></i>
-                <h3>Heures conduites</h3>
-                <span id="total-hours">328 h</span>
-            </div>
-        </section>
+    <div class="stats-card">
+        <div class="card-header">
+            <i class="fas fa-truck"></i>
+            <h3>Camions actifs</h3>
+            <i class="fas fa-edit edit-icon" id="edit-trucks"></i>
+        </div>
+        <span id="active-trucks">23</span>
+    </div>
+    <!-- <div class="stats-card">
+        <i class="fas fa-gas-pump"></i>
+        <h3>Consommation moyenne</h3>
+        <span id="avg-consumption">8.2 L/100km</span>
+    </div> -->
+    <!-- <div class="stats-card">
+        <i class="fas fa-road"></i>
+        <h3>Km parcourus</h3>
+        <span id="total-distance">24,582 km</span>
+    </div>
+    <div class="stats-card">
+        <i class="fas fa-user-clock"></i>
+        <h3>Heures conduites</h3>
+        <span id="total-hours">328 h</span>
+    </div> -->
+</section>
+
+<!-- Ajoutez ce modal pour l'édition -->
+<div id="edit-modal" class="modal">
+    <div class="modal-content">
+        <span class="close">&times;</span>
+        <h3>Modifier le nombre de camions actifs</h3>
+        <input type="number" id="trucks-input" min="0" step="1" value="12">
+        <button id="save-trucks" class="btn-submit">Enregistrer</button>
+    </div>
+</div>
 
         <section class="form-section">
             <h2><i class="fas fa-plus-circle"></i> Ajouter un voyage</h2>
