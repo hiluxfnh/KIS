@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Suivi Camions - KIS</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>Suivi des Camions - KIS</h1>
+        </header>
+
+        <main>
+            <section class="form-section">
+                <h2>Ajouter un voyage</h2>
+                <form id="voyageForm">
+                    <div class="form-group">
+                        <label for="chauffeur">Nom du chauffeur</label>
+                        <input type="text" id="chauffeur" required>
+                    </div>
+                    
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="camion">Numéro du camion</label>
+                            <input type="text" id="camion" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="destination">Destination</label>
+                            <input type="text" id="destination" required>
+                        </div>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="dateDepart">Date départ</label>
+                            <input type="datetime-local" id="dateDepart" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="dateArrivee">Date arrivée</label>
+                            <input type="datetime-local" id="dateArrivee" required>
+                        </div>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="carburantDepart">Carburant départ (L)</label>
+                            <input type="number" id="carburantDepart" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="carburantRetour">Carburant retour (L)</label>
+                            <input type="number" id="carburantRetour" required>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="commentaire">Commentaires</label>
+                        <textarea id="commentaire" rows="3"></textarea>
+                    </div>
+
+                    <button type="submit" class="btn-submit">Enregistrer</button>
+                </form>
+            </section>
+
+            <section class="controls-section">
+                <div class="search-filter">
+                    <input type="text" id="searchInput" placeholder="Rechercher...">
+                    <select id="filterSelect">
+                        <option value="chauffeur">Trier par chauffeur</option>
+                        <option value="camion">Trier par camion</option>
+                        <option value="dateDepart">Trier par date</option>
+                        <option value="destination">Trier par destination</option>
+                    </select>
+                </div>
+
+                <div class="export-buttons">
+                    <button id="exportExcel" class="btn-export">Export Excel</button>
+                    <button id="exportPDF" class="btn-export">Export PDF</button>
+                </div>
+            </section>
+
+            <section class="table-section">
+                <div class="table-container">
+                    <table id="voyagesTable">
+                        <thead>
+                            <tr>
+                                <th data-sort="chauffeur">Chauffeur</th>
+                                <th data-sort="camion">Camion</th>
+                                <th data-sort="dateDepart">Date départ</th>
+                                <th data-sort="dateArrivee">Date arrivée</th>
+                                <th>Carburant départ (L)</th>
+                                <th>Carburant retour (L)</th>
+                                <th data-sort="destination">Destination</th>
+                                <th>Commentaire</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <!-- Les données seront ajoutées ici -->
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+        </main>
+
+        <footer>
+            <p>Kribbi Inland Services &copy; 2023</p>
+        </footer>
+    </div>
+
+    <!-- Firebase -->
+    <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-firestore-compat.js"></script>
+    
+    <!-- Bibliothèques externes -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    
+    <!-- Script principal -->
+    <script src="script.js"></script>
+</body>
+</html>
