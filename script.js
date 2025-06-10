@@ -421,35 +421,30 @@ exportExcelBtn.addEventListener('click', async () => {
 });
 
 // Export PDF sophistiqué
+// Export PDF corrigé
 exportPDFBtn.addEventListener('click', async () => {
     try {
         const { jsPDF } = window.jspdf;
         const doc = new jsPDF('p', 'mm', 'a4');
         
-        // Charger le logo
-        const logoUrl = 'logo-kis.png';
-        const logoData = await getBase64Image(logoUrl);
-        
-        // En-tête avec logo
-        doc.addImage(logoData, 'PNG', 15, 15, 30, 30);
+        // En-tête avec texte seulement (plus fiable que le logo)
         doc.setFontSize(20);
         doc.setFont(undefined, 'bold');
-        doc.text('Rapport des Voyages', 110, 25, null, null, 'center');
-        doc.setFontSize(14);
-        doc.text('Kribbi Inland Services', 110, 32, null, null, 'center');
+        doc.text('Kribbi Inland Services', 105, 20, null, null, 'center');
+        doc.setFontSize(16);
+        doc.text('Rapport des Voyages', 105, 28, null, null, 'center');
         
         // Informations du rapport
         doc.setFontSize(10);
         doc.setTextColor(100);
-        doc.text(`Généré par: TCHIO NGOUMO ALAIN`, 15, 50);
-        doc.text(`Date: ${new Date().toLocaleDateString('fr-FR')}`, 15, 55);
-        doc.text(`Nombre de voyages: ${allVoyages.length}`, 170, 50, null, null, 'right');
-        doc.text(`Période: ${timeFilter.options[timeFilter.selectedIndex].text}`, 170, 55, null, null, 'right');
+        doc.text(`Généré par: TCHIO NGOUMO ALAIN`, 15, 40);
+        doc.text(`Date: ${new Date().toLocaleDateString('fr-FR')}`, 15, 45);
+        doc.text(`Nombre de voyages: ${allVoyages.length}`, 170, 40, null, null, 'right');
         
         // Séparateur
         doc.setDrawColor(200);
         doc.setLineWidth(0.3);
-        doc.line(15, 60, 195, 60);
+        doc.line(15, 50, 195, 50);
         
         // Données du tableau
         const headers = [
@@ -471,8 +466,8 @@ exportPDFBtn.addEventListener('click', async () => {
             return [
                 voyage.chauffeur,
                 voyage.camion,
-                formatShortDate(voyage.dateDepart),
-                formatShortDate(voyage.dateArrivee),
+                formatDateForPDF(voyage.dateDepart),
+                formatDateForPDF(voyage.dateArrivee),
                 voyage.distance + ' km',
                 voyage.carburantDepart + ' L',
                 voyage.carburantRetour + ' L',
@@ -483,7 +478,7 @@ exportPDFBtn.addEventListener('click', async () => {
         
         // Création du tableau
         doc.autoTable({
-            startY: 65,
+            startY: 55,
             head: [headers],
             body: data,
             theme: 'grid',
@@ -515,21 +510,29 @@ exportPDFBtn.addEventListener('click', async () => {
         }
         
         doc.save('rapport_voyages_kis.pdf');
+        showNotification('PDF généré avec succès', 'success');
     } catch (error) {
         console.error("Erreur d'export PDF: ", error);
+        showNotification('Erreur lors de la génération du PDF: ' + error.message, 'error');
     }
 });
 
-// Formatage de date court
-function formatShortDate(date) {
+// Formatage de date pour PDF
+function formatDateForPDF(date) {
     if (!date) return 'N/A';
-    const d = date.toDate ? date.toDate() : new Date(date);
-    return d.toLocaleDateString('fr-FR', {
-        day: '2-digit',
-        month: '2-digit',
-        hour: '2-digit',
-        minute: '2-digit'
-    });
+    try {
+        const d = date.toDate ? date.toDate() : new Date(date);
+        return d.toLocaleDateString('fr-FR', {
+            day: '2-digit',
+            month: '2-digit',
+            year: 'numeric',
+            hour: '2-digit',
+            minute: '2-digit'
+        });
+    } catch (e) {
+        console.error("Erreur de formatage de date", e);
+        return 'N/A';
+    }
 }
 
 // Conversion image en base64
