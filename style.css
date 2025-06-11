@@ -696,3 +696,32 @@ footer {
         text-align: center;
     }
 }
+
+/* Dans style.css */
+.status-badge {
+    padding: 5px 10px;
+    border-radius: 12px;
+    font-size: 0.8rem;
+    font-weight: 600;
+    display: inline-block;
+}
+
+.status-badge.success {
+    background-color: #28a745;
+    color: white;
+}
+
+.status-badge.warning {
+    background-color: #ffc107;
+    color: #343a40;
+}
+
+.status-badge.danger {
+    background-color: #dc3545;
+    color: white;
+}
+
+.status-badge.secondary {
+    background-color: #6c757d;
+    color: white;
+}

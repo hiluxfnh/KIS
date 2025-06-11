@@ -38,7 +38,7 @@
                     <h3>Camions actifs</h3>
                     <i class="fas fa-edit edit-icon" id="edit-trucks"></i>
                 </div>
-                <span id="active-trucks">23</span>
+                <span id="active-trucks"></span>
             </div>
             <div class="stats-card">
                 <i class="fas fa-building"></i>
@@ -197,29 +197,92 @@
             </div>
             
             <div class="table-container">
-                <table id="voyagesTable">
-                    <thead>
-                        <tr>
-                            <th data-sort="chauffeur"><i class="fas fa-user"></i> Chauffeur</th>
-                            <th data-sort="camion"><i class="fas fa-truck"></i> Camion</th>
-                            <th data-sort="dateDepart"><i class="fas fa-calendar-alt"></i> Départ</th>
-                            <th><i class="fas fa-clock"></i> Arrivée client</th>
-                            <th><i class="fas fa-clock"></i> Départ client</th>
-                            <th><i class="fas fa-map-marker-alt"></i> Arrivée Kribi</th>
-                            <th><i class="fas fa-calendar"></i> Positionnement</th>
-                            <th><i class="fas fa-road"></i> Distance</th>
-                            <th><i class="fas fa-gas-pump"></i> Carb. départ</th>
-                            <th><i class="fas fa-gas-pump"></i> Carb. retour</th>
-                            <th><i class="fas fa-bolt"></i> Performance</th>
-                            <th><i class="fas fa-file-alt"></i> Documentation</th>
-                            <th><i class="fas fa-cogs"></i> Actions</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <!-- Les données seront ajoutées ici -->
-                    </tbody>
-                </table>
-            </div>
+    <table id="voyagesTable">
+        <thead>
+            <tr>
+                <th data-sort="chauffeur"><i class="fas fa-user"></i> Chauffeur</th>
+                <th data-sort="camion"><i class="fas fa-truck"></i> Camion</th>
+                <th><i class="fas fa-building"></i> Société</th>
+                <th data-sort="dateDepart"><i class="fas fa-calendar-alt"></i> Départ</th>
+                <th><i class="fas fa-clock"></i> Arrivée client</th>
+                <th><i class="fas fa-clock"></i> Départ client</th>
+                <th><i class="fas fa-map-marker-alt"></i> Arrivée Kribi</th>
+                <th><i class="fas fa-calendar"></i> Positionnement</th>
+                <th><i class="fas fa-road"></i> Distance</th>
+                <th><i class="fas fa-gas-pump"></i> Carb. départ</th>
+                <th><i class="fas fa-gas-pump"></i> Carb. retour</th>
+                <th><i class="fas fa-bolt"></i> Performance</th>
+                <th><i class="fas fa-file-alt"></i> Documentation</th>
+                <th><i class="fas fa-exclamation-triangle"></i> Incidents</th>
+                <th><i class="fas fa-check-circle"></i> Statut</th>
+                <th><i class="fas fa-cogs"></i> Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            <!-- Les données seront ajoutées ici dynamiquement -->
+            <tr>
+                <td>Jean Dupont</td>
+                <td>ABC-123</td>
+                <td>KIS</td>
+                <td>12/05/2023 08:00</td>
+                <td>12/05/2023 10:30</td>
+                <td>12/05/2023 11:45</td>
+                <td>13/05/2023 14:20</td>
+                <td>
+                    13/05/2023 16:00<br>
+                    Zone portuaire
+                </td>
+                <td>350 km</td>
+                <td>150 L</td>
+                <td>45 L</td>
+                <td class="performance-good">
+                    <i class="fas fa-check-circle"></i> 6.8 km/L
+                </td>
+                <td>Bordereau #4587</td>
+                <td>Aucun incident</td>
+                <td>Complet</td>
+                <td>
+                    <button class="btn-edit">
+                        <i class="fas fa-edit"></i> Modifier
+                    </button>
+                    <button class="btn-delete">
+                        <i class="fas fa-trash"></i> Supprimer
+                    </button>
+                </td>
+            </tr>
+            <tr>
+                <td>Marie Lambert</td>
+                <td>XYZ-789</td>
+                <td>UTA</td>
+                <td>14/05/2023 07:30</td>
+                <td>14/05/2023 09:15</td>
+                <td>14/05/2023 10:45</td>
+                <td>15/05/2023 12:30</td>
+                <td>
+                    15/05/2023 14:00<br>
+                    Entrepôt Douala
+                </td>
+                <td>420 km</td>
+                <td>180 L</td>
+                <td>60 L</td>
+                <td class="performance-medium">
+                    <i class="fas fa-exclamation-circle"></i> 4.2 km/L
+                </td>
+                <td>Bordereau #4590</td>
+                <td>Retard livraison</td>
+                <td>Retard</td>
+                <td>
+                    <button class="btn-edit">
+                        <i class="fas fa-edit"></i> Modifier
+                    </button>
+                    <button class="btn-delete">
+                        <i class="fas fa-trash"></i> Supprimer
+                    </button>
+                </td>
+            </tr>
+        </tbody>
+    </table>
+</div>
         </section>
     </main>
 
