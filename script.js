@@ -421,7 +421,7 @@ exportExcelBtn.addEventListener('click', async () => {
 });
 
 // Export PDF sophistiqué
-// Export PDF amélioré avec design professionnel
+// Export PDF corrigé et amélioré
 exportPDFBtn.addEventListener('click', async () => {
     try {
         const { jsPDF } = window.jspdf;
@@ -436,92 +436,55 @@ exportPDFBtn.addEventListener('click', async () => {
         const secondaryColor = [44, 90, 160]; // #2c5aa0
         const accentColor = [255, 107, 0]; // #ff6b00
 
-        // En-tête avec fond coloré
-        doc.setFillColor(...primaryColor);
-        doc.rect(0, 0, pageWidth, 40, 'F');
-        
-        // Logo ou texte de l'entreprise
+        // En-tête avec texte seulement
         doc.setFontSize(20);
-        doc.setTextColor(255, 255, 255);
-        doc.setFont(undefined, 'bold');
+        doc.setFont("helvetica", "bold");
+        doc.setTextColor(...primaryColor);
         doc.text('Kribbi Inland Services', pageWidth / 2, 20, null, null, 'center');
-        
-        // Sous-titre
-        doc.setFontSize(14);
-        doc.text('Rapport des Voyages', pageWidth / 2, 30, null, null, 'center');
+        doc.setFontSize(16);
+        doc.text('Rapport des Voyages', pageWidth / 2, 28, null, null, 'center');
         
         // Informations du rapport
         doc.setFontSize(10);
-        doc.setTextColor(255, 255, 255, 0.8);
-        doc.text(`Généré par: TCHIO NGOUMO ALAIN`, margin, 45);
-        doc.text(`Date: ${new Date().toLocaleDateString('fr-FR')}`, pageWidth - margin, 45, null, null, 'right');
+        doc.setTextColor(100);
+        doc.setFont("helvetica", "normal");
+        doc.text(`Généré par: TCHIO NGOUMO ALAIN`, margin, 40);
+        doc.text(`Date: ${new Date().toLocaleDateString('fr-FR')}`, margin, 45);
+        doc.text(`Nombre de voyages: ${allVoyages.length}`, pageWidth - margin, 40, null, null, 'right');
+        doc.text(`Période: ${timeFilter.options[timeFilter.selectedIndex].text}`, pageWidth - margin, 45, null, null, 'right');
         
         // Séparateur
         doc.setDrawColor(...accentColor);
         doc.setLineWidth(0.5);
         doc.line(margin, 50, pageWidth - margin, 50);
         
-        // Titre de la section
+        // Section des voyages
         yPos = 60;
-        doc.setFontSize(16);
-        doc.setTextColor(...primaryColor);
-        doc.text('Synthèse des Voyages', pageWidth / 2, yPos, null, null, 'center');
-        yPos += 10;
-
-        // Données synthétiques
-        doc.setFontSize(10);
-        doc.setTextColor(60, 60, 60);
-        doc.text(`Période: ${timeFilter.options[timeFilter.selectedIndex].text}`, margin, yPos);
-        doc.text(`Nombre de voyages: ${allVoyages.length}`, pageWidth - margin, yPos, null, null, 'right');
-        yPos += 8;
         
-        doc.text(`Camions actifs: ${document.getElementById('active-trucks').textContent}`, margin, yPos);
-        doc.text(`Efficacité moyenne: ${avgEfficiencySpan.textContent.split(': ')[1]}`, pageWidth - margin, yPos, null, null, 'right');
-        yPos += 15;
-
         // Tableau des voyages
         const headers = [
-            'Ref',
             'Chauffeur',
             'Camion',
+            'Destination',
             'Départ',
             'Arrivée',
             'Distance',
-            'Efficacité',
-            'Statut'
+            'Efficacité'
         ];
         
-        const data = [];
-        const voyageDetails = [];
-        
-        allVoyages.forEach((voyage, index) => {
+        const data = allVoyages.map(voyage => {
             const fuelUsed = voyage.carburantDepart - voyage.carburantRetour;
             const efficiency = fuelUsed > 0 ? (voyage.distance / fuelUsed).toFixed(2) : 'N/A';
             
-            data.push([
-                (index + 1).toString(),
+            return [
                 voyage.chauffeur,
                 voyage.camion,
+                voyage.destination,
                 formatDateForPDF(voyage.dateDepart),
                 formatDateForPDF(voyage.dateArrivee),
                 voyage.distance + ' km',
-                efficiency + ' km/L',
-                voyage.statut || 'Complet'
-            ]);
-            
-            // Stocker les détails pour la section suivante
-            voyageDetails.push({
-                ref: index + 1,
-                chauffeur: voyage.chauffeur,
-                camion: voyage.camion,
-                dateDepart: formatDateForPDF(voyage.dateDepart),
-                dateArrivee: formatDateForPDF(voyage.dateArrivee),
-                destination: voyage.destination,
-                commentaire: voyage.commentaire || 'Aucun commentaire',
-                incidents: voyage.incidents || 'Aucun incident',
-                efficiency: efficiency,
-                statut: voyage.statut || 'Complet'
-            });
+                efficiency + ' km/L'
+            ];
         });
         
         // Création du tableau
@@ -534,23 +497,20 @@ exportPDFBtn.addEventListener('click', async () => {
                 fillColor: secondaryColor,
                 textColor: 255,
                 fontStyle: 'bold',
-                fontSize: 9
-            },
-            bodyStyles: {
-                fontSize: 8,
-                cellPadding: 2,
-                textColor: 60
+                fontSize: 10
             },
             styles: {
-                halign: 'center',
-                valign: 'middle'
+                fontSize: 9,
+                cellPadding: 3,
+                halign: 'center'
             },
             columnStyles: {
-                0: {cellWidth: 8},
-                1: {cellWidth: 25},
-                2: {cellWidth: 20},
-                5: {cellWidth: 18},
-                7: {cellWidth: 18}
+                0: {halign: 'left', cellWidth: 25},
+                1: {cellWidth: 20},
+                2: {halign: 'left', cellWidth: 25},
+                3: {cellWidth: 30},
+                4: {cellWidth: 30},
+                6: {cellWidth: 20}
             },
             margin: { left: margin, right: margin },
             didDrawPage: function(data) {
@@ -558,77 +518,79 @@ exportPDFBtn.addEventListener('click', async () => {
             }
         });
         
-        // Section des détails par voyage
-        voyageDetails.forEach((voyage, index) => {
-            // Vérifier l'espace disponible avant de créer une nouvelle page
+        // Détails supplémentaires (commentaires et incidents)
+        yPos = doc.lastAutoTable.finalY + 10;
+        doc.setFontSize(14);
+        doc.setTextColor(...primaryColor);
+        doc.setFont("helvetica", "bold");
+        doc.text('Détails Complémentaires', margin, yPos);
+        yPos += 10;
+        
+        allVoyages.forEach((voyage, index) => {
             if (yPos > pageHeight - 60) {
                 doc.addPage();
                 yPos = margin;
-                
-                // En-tête de page supplémentaire
-                doc.setFillColor(...primaryColor);
-                doc.rect(0, 0, pageWidth, 20, 'F');
-                doc.setFontSize(12);
-                doc.setTextColor(255, 255, 255);
-                doc.text('Détails des voyages - Suite', pageWidth / 2, 15, null, null, 'center');
-                doc.setDrawColor(...accentColor);
-                doc.line(margin, 20, pageWidth - margin, 20);
-                yPos = 30;
             }
             
-            // Titre du voyage
+            // Header du voyage
             doc.setFontSize(12);
-            doc.setTextColor(...primaryColor);
-            doc.setFont(undefined, 'bold');
-            doc.text(`Voyage #${voyage.ref}: ${voyage.chauffeur} - ${voyage.camion}`, margin, yPos);
-            yPos += 8;
+            doc.setTextColor(...secondaryColor);
+            doc.text(`Voyage #${index + 1}: ${voyage.chauffeur} - ${voyage.camion}`, margin, yPos);
+            yPos += 7;
             
-            // Informations de base
+            // Dates et destination
             doc.setFontSize(10);
-            doc.setTextColor(60, 60, 60);
-            doc.setFont(undefined, 'normal');
-            
-            doc.text(`Départ: ${voyage.dateDepart}`, margin, yPos);
-            doc.text(`Arrivée: ${voyage.dateArrivee}`, margin + 70, yPos);
+            doc.setTextColor(0);
+            doc.text(`Départ: ${formatDateForPDF(voyage.dateDepart)}`, margin, yPos);
+            doc.text(`Arrivée: ${formatDateForPDF(voyage.dateArrivee)}`, margin + 70, yPos);
             doc.text(`Destination: ${voyage.destination}`, margin + 140, yPos);
             yPos += 6;
             
-            doc.text(`Statut: ${voyage.statut}`, margin, yPos);
-            doc.text(`Efficacité: ${voyage.efficiency} km/L`, margin + 70, yPos);
-            yPos += 10;
+            // Commentaires
+            doc.setFont("helvetica", "bold");
+            doc.setTextColor(...primaryColor);
+            doc.text('Commentaires:', margin, yPos);
+            doc.setFont("helvetica", "normal");
+            doc.setTextColor(0);
             
-            // Section commentaire
-            doc.setFillColor(240, 248, 255);
-            doc.rect(margin, yPos, pageWidth - margin * 2, 25, 'F');
-            doc.setFont(undefined, 'bold');
-            doc.setTextColor(...secondaryColor);
-            doc.text('Commentaires:', margin + 5, yPos + 7);
+            const comment = voyage.commentaire || 'Aucun commentaire';
+            const commentLines = doc.splitTextToSize(comment, pageWidth - margin * 2);
+            commentLines.forEach(line => {
+                if (yPos > pageHeight - 20) {
+                    doc.addPage();
+                    yPos = margin;
+                }
+                doc.text(line, margin + 10, yPos + 5);
+                yPos += 7;
+            });
             
-            doc.setFont(undefined, 'normal');
-            doc.setTextColor(60, 60, 60);
-            const commentLines = doc.splitTextToSize(voyage.commentaire, pageWidth - margin * 2 - 10);
-            doc.text(commentLines, margin + 5, yPos + 15);
-            yPos += 30;
+            yPos += 5;
             
-            // Section incidents
-            doc.setFillColor(255, 248, 240);
-            doc.rect(margin, yPos, pageWidth - margin * 2, 25, 'F');
-            doc.setFont(undefined, 'bold');
-            doc.setTextColor(accentColor);
-            doc.text('Incidents/Remarques:', margin + 5, yPos + 7);
+            // Incidents
+            doc.setFont("helvetica", "bold");
+            doc.setTextColor(accentColor[0], accentColor[1], accentColor[2]);
+            doc.text('Incidents/Remarques:', margin, yPos);
+            doc.setFont("helvetica", "normal");
+            doc.setTextColor(0);
             
-            doc.setFont(undefined, 'normal');
-            doc.setTextColor(60, 60, 60);
-            const incidentLines = doc.splitTextToSize(voyage.incidents, pageWidth - margin * 2 - 10);
-            doc.text(incidentLines, margin + 5, yPos + 15);
-            yPos += 30;
+            const incidents = voyage.incidents || 'Aucun incident';
+            const incidentLines = doc.splitTextToSize(incidents, pageWidth - margin * 2);
+            incidentLines.forEach(line => {
+                if (yPos > pageHeight - 20) {
+                    doc.addPage();
+                    yPos = margin;
+                }
+                doc.text(line, margin + 10, yPos + 5);
+                yPos += 7;
+            });
             
-            // Séparateur entre les voyages
-            if (index < voyageDetails.length - 1) {
-                doc.setDrawColor(200, 200, 200);
+            // Séparateur
+            if (index < allVoyages.length - 1) {
+                yPos += 10;
+                doc.setDrawColor(200);
                 doc.setLineWidth(0.2);
                 doc.line(margin, yPos, pageWidth - margin, yPos);
-                yPos += 10;
+                yPos += 15;
             }
         });
         
@@ -639,7 +601,7 @@ exportPDFBtn.addEventListener('click', async () => {
             doc.setFontSize(8);
             doc.setTextColor(100);
             doc.text(`Page ${i} sur ${pageCount}`, pageWidth - margin, pageHeight - 10, null, null, 'right');
-            doc.text('© Kribbi Inland Services', margin, pageHeight - 10);
+            doc.text('KIS - Suivi des transports', margin, pageHeight - 10);
         }
         
         doc.save('rapport_voyages_kis.pdf');
@@ -650,19 +612,26 @@ exportPDFBtn.addEventListener('click', async () => {
     }
 });
 
-// Formatage de date pour PDF
+// Formatage de date pour PDF (version robuste)
 function formatDateForPDF(date) {
     if (!date) return 'N/A';
+    
     try {
+        // Gérer les timestamps Firebase
         const d = date.toDate ? date.toDate() : new Date(date);
+        
+        // Vérifier que c'est une date valide
+        if (isNaN(d.getTime())) return 'N/A';
+        
         return d.toLocaleDateString('fr-FR', {
             day: '2-digit',
             month: '2-digit',
+            year: 'numeric',
             hour: '2-digit',
             minute: '2-digit'
         });
     } catch (e) {
-        console.error("Erreur de formatage de date", e);
+        console.error("Erreur de formatage de date", date, e);
         return 'N/A';
     }
 }
