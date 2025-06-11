@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Suivi Camions - KIS</title>
+    <title>Suivi Camions - KIS/UTA</title>
     <link rel="stylesheet" href="style.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 </head>
@@ -11,14 +11,20 @@
     <header>
         <div class="header-container">
             <div class="logo-header">
-                <img src="img/logo.jpg" alt="Logo KIS" class="logo">
+                <div class="dual-logo">
+                    <img src="img/logo.jpg" alt="Logo KIS" class="logo">
+                    <img src="img/uta-logo.jpg" alt="Logo UTA" class="logo">
+                </div>
                 <div>
-                    <h1>Kribi Inland Services</h1>
+                    <h1>Kribi Inland Services & United Transport Africa</h1>
                     <h3>Suivi des camions et chauffeurs</h3>
                 </div>
             </div>
             <div class="user-info">
-                <span class="user-name">TCHIO NGOUMO ALAIN</span>
+                <div class="user-details">
+                    <span class="user-name">TCHIO NGOUMO ALAIN</span>
+                    <span class="user-role">Agent Logistique</span>
+                </div>
                 <i class="fas fa-user-circle"></i>
             </div>
         </div>
@@ -26,40 +32,33 @@
 
     <main class="container">
         <section class="dashboard">
-    <div class="stats-card">
-        <div class="card-header">
-            <i class="fas fa-truck"></i>
-            <h3>Camions actifs</h3>
-            <i class="fas fa-edit edit-icon" id="edit-trucks"></i>
-        </div>
-        <span id="active-trucks">23</span>
-    </div>
-    <!-- <div class="stats-card">
-        <i class="fas fa-gas-pump"></i>
-        <h3>Consommation moyenne</h3>
-        <span id="avg-consumption">8.2 L/100km</span>
-    </div> -->
-    <!-- <div class="stats-card">
-        <i class="fas fa-road"></i>
-        <h3>Km parcourus</h3>
-        <span id="total-distance">24,582 km</span>
-    </div>
-    <div class="stats-card">
-        <i class="fas fa-user-clock"></i>
-        <h3>Heures conduites</h3>
-        <span id="total-hours">328 h</span>
-    </div> -->
-</section>
+            <div class="stats-card">
+                <div class="card-header">
+                    <i class="fas fa-truck"></i>
+                    <h3>Camions actifs</h3>
+                    <i class="fas fa-edit edit-icon" id="edit-trucks"></i>
+                </div>
+                <span id="active-trucks">23</span>
+            </div>
+            <div class="stats-card">
+                <i class="fas fa-building"></i>
+                <h3>Société</h3>
+                <select id="company-selector">
+                    <option value="KIS">Kribi Inland Services</option>
+                    <option value="UTA">UTA Cameroun SA</option>
+                </select>
+            </div>
+        </section>
 
-<!-- Ajoutez ce modal pour l'édition -->
-<div id="edit-modal" class="modal">
-    <div class="modal-content">
-        <span class="close">&times;</span>
-        <h3>Modifier le nombre de camions actifs</h3>
-        <input type="number" id="trucks-input" min="0" step="1" value="12">
-        <button id="save-trucks" class="btn-submit">Enregistrer</button>
-    </div>
-</div>
+        <!-- Modal pour l'édition -->
+        <div id="edit-modal" class="modal">
+            <div class="modal-content">
+                <span class="close">&times;</span>
+                <h3>Modifier le nombre de camions actifs</h3>
+                <input type="number" id="trucks-input" min="0" step="1" value="23">
+                <button id="save-trucks" class="btn-submit">Enregistrer</button>
+            </div>
+        </div>
 
         <section class="form-section">
             <h2><i class="fas fa-plus-circle"></i> Ajouter un voyage</h2>
@@ -71,7 +70,7 @@
                     </div>
                     
                     <div class="form-group">
-                        <label for="camion"><i class="fas fa-truck"></i> Numéro du camion</label>
+                        <label for="camion"><i class="fas fa-truck"></i> No. D'immatriculation</label>
                         <input type="text" id="camion" required>
                     </div>
                     
@@ -89,10 +88,38 @@
                         <label for="dateDepart"><i class="fas fa-calendar-alt"></i> Date départ</label>
                         <input type="datetime-local" id="dateDepart" required>
                     </div>
+               
+                    <div class="form-group">
+                        <label for="clientArrivalTime"><i class="fas fa-clock"></i> Heure d'arrivée chez le client</label>
+                        <input type="datetime-local" id="clientArrivalTime" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="clientDepartureTime"><i class="fas fa-clock"></i> Heure de départ de chez le client</label>
+                        <input type="datetime-local" id="clientDepartureTime" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="kribiArrivalDate"><i class="fas fa-map-marker-alt"></i> Date d'arrivée à Kribi</label>
+                        <input type="datetime-local" id="kribiArrivalDate" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="containerPositioningDate"><i class="fas fa-calendar"></i> Date de positionnement</label>
+                        <input type="datetime-local" id="containerPositioningDate" required>
+                    </div>
                     
                     <div class="form-group">
-                        <label for="dateArrivee"><i class="fas fa-calendar-check"></i> Date arrivée</label>
-                        <input type="datetime-local" id="dateArrivee">
+                        <label for="containerPositioningLocation"><i class="fas fa-map-pin"></i> Lieu de positionnement</label>
+                        <input type="text" id="containerPositioningLocation" required>
+                    </div>
+                    
+                    <div class="form-group full-width">
+                        <label for="documentation"><i class="fas fa-file-alt"></i> Documentations (bordereau de livraison)</label>
+                        <textarea id="documentation" rows="3"></textarea>
+                    </div>
+                    
+                    <div class="form-group full-width">
+                        <label for="incidents"><i class="fas fa-exclamation-triangle"></i> Incidents/Remarques</label>
+                        <textarea id="incidents" rows="2"></textarea>
                     </div>
                     
                     <div class="form-group">
@@ -103,16 +130,6 @@
                     <div class="form-group">
                         <label for="carburantRetour"><i class="fas fa-gas-pump"></i> Carburant retour (L)</label>
                         <input type="number" id="carburantRetour" step="0.1" required>
-                    </div>
-                    
-                    <div class="form-group full-width">
-                        <label for="commentaire"><i class="fas fa-comment"></i> Commentaires</label>
-                        <textarea id="commentaire" rows="3"></textarea>
-                    </div>
-                    
-                    <div class="form-group full-width">
-                        <label for="incidents"><i class="fas fa-exclamation-triangle"></i> Incidents/Remarques</label>
-                        <textarea id="incidents" rows="2"></textarea>
                     </div>
                     
                     <div class="form-group">
@@ -186,15 +203,15 @@
                             <th data-sort="chauffeur"><i class="fas fa-user"></i> Chauffeur</th>
                             <th data-sort="camion"><i class="fas fa-truck"></i> Camion</th>
                             <th data-sort="dateDepart"><i class="fas fa-calendar-alt"></i> Départ</th>
-                            <th data-sort="dateArrivee"><i class="fas fa-calendar-check"></i> Arrivée</th>
+                            <th><i class="fas fa-clock"></i> Arrivée client</th>
+                            <th><i class="fas fa-clock"></i> Départ client</th>
+                            <th><i class="fas fa-map-marker-alt"></i> Arrivée Kribi</th>
+                            <th><i class="fas fa-calendar"></i> Positionnement</th>
                             <th><i class="fas fa-road"></i> Distance</th>
                             <th><i class="fas fa-gas-pump"></i> Carb. départ</th>
                             <th><i class="fas fa-gas-pump"></i> Carb. retour</th>
                             <th><i class="fas fa-bolt"></i> Performance</th>
-                            <th><i class="fas fa-map-marker-alt"></i> Destination</th>
-                            <th><i class="fas fa-chart-line"></i> Efficacité</th>
-                            <th><i class="fas fa-tachometer-alt"></i> Vitesse moy.</th>
-                            <th><i class="fas fa-clipboard"></i> Commentaire</th>
+                            <th><i class="fas fa-file-alt"></i> Documentation</th>
                             <th><i class="fas fa-cogs"></i> Actions</th>
                         </tr>
                     </thead>
@@ -209,28 +226,30 @@
     <footer>
         <div class="footer-container">
             <div class="footer-logo">
-                <img src="img/logo.jpg" alt="Logo KIS" class="logo-small">
+                <div class="dual-logo-small">
+                    <img src="img/logo.jpg" alt="Logo KIS" class="logo-small">
+                    <img src="img/uta-logo.jpg" alt="Logo UTA" class="logo-small">
+                </div>
                 <div>
-                    <h3>Kribi Inland Services</h3>
-                    <p>Transport et logistique de qualité</p>
+                    <h3>Kribi Inland Services & UTA Cameroun SA</h3>
+                    <p>Services de transport et logistique</p>
                 </div>
             </div>
             
             <div class="footer-contact">
                 <p><i class="fas fa-map-marker-alt"></i> Kribi, Cameroun</p>
-                <p><i class="fas fa-phone"></i> +237 6XX XXX XXX</p>
-                <p><i class="fas fa-envelope"></i> contact@kis-cm.com</p>
+                <p><i class="fas fa-phone"></i> 657 60 08 55 / 681 23 33 07</p>
+                <p><i class="fas fa-envelope"></i> alain.tchio@kis-kribi.org</p>
             </div>
             
             <div class="footer-info">
                 <p>Responsable: TCHIO NGOUMO ALAIN</p>
+                <p>Fonction: Agent Logistique</p>
                 <p>Dernière mise à jour: <span id="lastUpdate"></span></p>
-                <p>&copy; <span id="currentYear"></span> KIS. Tous droits réservés.</p>
+                <p>&copy; <span id="currentYear"></span> KIS/UTA. Tous droits réservés.</p>
             </div>
         </div>
     </footer>
-
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.25/jspdf.plugin.autotable.min.js"></script>
 
     <!-- Firebase -->
     <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-app-compat.js"></script>

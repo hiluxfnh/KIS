@@ -623,3 +623,76 @@ footer {
 .close:hover {
     color: var(--danger);
 }
+
+/* Styles pour les logos doubles */
+.dual-logo {
+    display: flex;
+    gap: 15px;
+    align-items: center;
+}
+
+.dual-logo .logo {
+    height: 50px;
+    width: auto;
+    max-width: 120px;
+}
+
+.dual-logo-small {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+}
+
+.dual-logo-small .logo-small {
+    height: 30px;
+    width: auto;
+    max-width: 80px;
+}
+
+/* Style pour le sélecteur de société */
+#company-selector {
+    background: white;
+    border: 1px solid #ddd;
+    border-radius: 6px;
+    padding: 8px;
+    font-size: 0.9rem;
+    margin-top: 5px;
+    width: 100%;
+}
+
+/* Style pour les informations utilisateur */
+.user-details {
+    display: flex;
+    flex-direction: column;
+    text-align: right;
+}
+
+.user-role {
+    font-size: 0.8rem;
+    opacity: 0.8;
+}
+
+/* Adaptation du tableau */
+.table-container table th:nth-child(4),
+.table-container table td:nth-child(4),
+.table-container table th:nth-child(5),
+.table-container table td:nth-child(5),
+.table-container table th:nth-child(6),
+.table-container table td:nth-child(6),
+.table-container table th:nth-child(7),
+.table-container table td:nth-child(7) {
+    min-width: 120px;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .dual-logo {
+        flex-direction: column;
+        gap: 5px;
+    }
+    
+    .header-container h1 {
+        font-size: 1.4rem;
+        text-align: center;
+    }
+}
