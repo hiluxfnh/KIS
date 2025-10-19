@@ -144,6 +144,52 @@ section {
     padding: 25px;
 }
 
+/* Form section header with toggle */
+.form-section-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+}
+
+.btn-toggle {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 36px;
+    height: 36px;
+    border-radius: 8px;
+    border: 1px solid #d1d9e6;
+    background: #fff;
+    color: var(--primary);
+    cursor: pointer;
+    transition: transform 0.25s ease, background 0.2s ease, color 0.2s ease;
+}
+
+.btn-toggle:hover {
+    background: #f4f7fb;
+}
+
+.btn-toggle[aria-expanded="true"] i {
+    transform: rotate(180deg);
+}
+
+/* Collapse container animation */
+.collapse {
+    overflow: hidden;
+    display: grid;
+    grid-template-rows: 0fr;
+    transition: grid-template-rows 300ms ease;
+}
+
+.collapse[aria-hidden="false"] {
+    grid-template-rows: 1fr;
+}
+
+.collapse > form {
+    min-height: 0; /* allow grid animation */
+}
+
 .controls-section {
     padding: 15px 25px;
     background: var(--light-blue);

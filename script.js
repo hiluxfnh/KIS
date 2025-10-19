@@ -169,6 +169,9 @@ const authLogin = document.getElementById("authLogin");
 const authError = document.getElementById("authError");
 const userNameSpan = document.getElementById("userName");
 const userRoleSpan = document.getElementById("userRole");
+// Form toggle controls
+const toggleFormBtn = document.getElementById("toggleFormBtn");
+const voyageFormWrap = document.getElementById("voyageFormWrap");
 
 // Variables globales
 let currentSortField = "dateDepart";
@@ -199,6 +202,36 @@ function getUserProfile(email) {
 
 // Initialisation des dates
 function initDates() {
+  // ---------------- Form Toggle (collapse) -----------------
+  // Ensure collapsed by default (hidden attribute already present in HTML)
+  if (voyageFormWrap) {
+    voyageFormWrap.setAttribute("aria-hidden", "true");
+  }
+
+  if (toggleFormBtn && voyageFormWrap) {
+    toggleFormBtn.addEventListener("click", () => {
+      const expanded = toggleFormBtn.getAttribute("aria-expanded") === "true";
+      const next = !expanded;
+      toggleFormBtn.setAttribute("aria-expanded", String(next));
+      // Prepare for animation
+      if (next) {
+        // expanding
+        voyageFormWrap.hidden = false; // unhide to allow animation
+        requestAnimationFrame(() => {
+          voyageFormWrap.setAttribute("aria-hidden", "false");
+        });
+      } else {
+        // collapsing
+        voyageFormWrap.setAttribute("aria-hidden", "true");
+        // after transition, hide to remove from a11y tree
+        const onEnd = () => {
+          voyageFormWrap.hidden = true;
+          voyageFormWrap.removeEventListener("transitionend", onEnd);
+        };
+        voyageFormWrap.addEventListener("transitionend", onEnd);
+      }
+    });
+  }
   const now = new Date();
   lastUpdateSpan.textContent = now.toLocaleDateString("fr-FR", {
     day: "2-digit",
@@ -207,6 +240,87 @@ function initDates() {
   });
   currentYearSpan.textContent = now.getFullYear();
 }
+
+// ---------------- Authentication & Role-based UI -----------------
+function updateUIForRole() {
+  try {
+    const formSection = document.querySelector(".form-section");
+    if (formSection) {
+      // Completely hide the whole add-voyage section for view-only users
+      formSection.style.display = canEdit ? "block" : "none";
+    }
+    // Hide edit action buttons in the table
+    document.querySelectorAll(".btn-edit, .btn-delete").forEach((btn) => {
+      btn.style.display = canEdit ? "inline-flex" : "none";
+    });
+    // Hide trucks edit icon when view-only
+    if (editTrucksBtn)
+      editTrucksBtn.style.display = canEdit ? "inline" : "none";
+    // Toggle visibility of login/logout buttons
+    if (loginBtn)
+      loginBtn.style.display = auth.currentUser ? "none" : "inline-flex";
+    if (logoutBtn)
+      logoutBtn.style.display = auth.currentUser ? "inline-flex" : "none";
+  } catch (e) {
+    /* noop */
+  }
+}
+
+// Open/Close auth modal
+if (loginBtn && authModal) {
+  loginBtn.addEventListener("click", () => {
+    authError.style.display = "none";
+    authError.textContent = "";
+    authModal.style.display = "block";
+  });
+}
+
+const authModalClose = document.querySelector('[data-close="auth-modal"]');
+if (authModalClose && authModal) {
+  authModalClose.addEventListener("click", () => {
+    authModal.style.display = "none";
+  });
+}
+
+// Basic email/password sign-in
+if (authLogin) {
+  authLogin.addEventListener("click", async () => {
+    try {
+      authError.style.display = "none";
+      authError.textContent = "";
+      const email = (authEmail.value || "").trim();
+      const password = authPassword.value || "";
+      await auth.signInWithEmailAndPassword(email, password);
+      authModal.style.display = "none";
+    } catch (e) {
+      authError.textContent = e?.message || "Échec de la connexion";
+      authError.style.display = "block";
+    }
+  });
+}
+
+if (logoutBtn) {
+  logoutBtn.addEventListener("click", async () => {
+    try {
+      await auth.signOut();
+    } catch {}
+  });
+}
+
+auth.onAuthStateChanged((user) => {
+  const profile = user ? getUserProfile(user.email) : null;
+  const role = profile?.role || "viewer";
+  canEdit = role === "admin" || role === "editor";
+  if (userNameSpan)
+    userNameSpan.textContent = profile?.name || user?.email || "Invité";
+  if (userRoleSpan)
+    userRoleSpan.textContent = canEdit
+      ? role === "admin"
+        ? "Administrateur"
+        : "Éditeur"
+      : "Lecture seule";
+  updateUIForRole();
+});
 
 // Soumission du formulaire
 voyageForm.addEventListener("submit", async (e) => {
@@ -1155,19 +1269,30 @@ exportPDFBtn.addEventListener("click", async () => {
         ],
         body: tableBody,
         theme: "grid",
-        headStyles: { fillColor: color, fontStyle: "bold", fontSize: 10 },
-        styles: { fontSize: 9, cellPadding: 3, valign: "middle" },
-        columnStyles: {
-          0: { cellWidth: 30 },
-          1: { cellWidth: 30 },
-          2: { cellWidth: 24 },
-          3: { cellWidth: 36 },
-          4: { cellWidth: 24, halign: "right" },
-          5: { cellWidth: 24, halign: "right" },
-          6: { cellWidth: 28, halign: "right" },
-          7: { cellWidth: 20, halign: "center" },
+        headStyles: {
+          fillColor: color,
+          fontStyle: "bold",
+          fontSize: 9,
+          cellPadding: 2,
         },
-        // Center the table horizontally
+        styles: {
+          fontSize: 8,
+          cellPadding: 2,
+          valign: "middle",
+          overflow: "linebreak",
+          lineWidth: 0.1,
+        },
+        columnStyles: {
+          0: { cellWidth: 26 }, // Départ
+          1: { cellWidth: 24 }, // Chauffeur
+          2: { cellWidth: 20 }, // Camion
+          3: { cellWidth: 32 }, // Destination
+          4: { cellWidth: 18, halign: "right" }, // Distance
+          5: { cellWidth: 20, halign: "right" }, // Carburant
+          6: { cellWidth: 22, halign: "right" }, // Efficacité
+          7: { cellWidth: 16, halign: "center" }, // Statut
+        },
+        // Center the table horizontally and keep within margins
         halign: "center",
         tableWidth: "wrap",
         margin: { left: margin, right: margin, top: 24 },

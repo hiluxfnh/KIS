@@ -111,131 +111,148 @@
       </div>
 
       <section class="form-section">
-        <h2><i class="fas fa-plus-circle"></i> Ajouter un voyage</h2>
-        <form id="voyageForm">
-          <div class="form-grid">
-            <div class="form-group">
-              <label for="chauffeur"
-                ><i class="fas fa-user"></i> Nom du chauffeur</label
-              >
-              <input type="text" id="chauffeur" required />
-            </div>
-
-            <div class="form-group">
-              <label for="camion"
-                ><i class="fas fa-truck"></i> No. D'immatriculation</label
-              >
-              <input type="text" id="camion" required />
-            </div>
-
-            <div class="form-group">
-              <label for="destination"
-                ><i class="fas fa-map-marker-alt"></i> Destination</label
-              >
-              <input type="text" id="destination" required />
-            </div>
-
-            <div class="form-group">
-              <label for="distance"
-                ><i class="fas fa-road"></i> Distance (km)</label
-              >
-              <input type="number" id="distance" required />
-            </div>
-
-            <div class="form-group">
-              <label for="dateDepart"
-                ><i class="fas fa-calendar-alt"></i> Date départ</label
-              >
-              <input type="datetime-local" id="dateDepart" required />
-            </div>
-
-            <div class="form-group">
-              <label for="clientArrivalTime"
-                ><i class="fas fa-clock"></i> Heure d'arrivée chez le
-                client</label
-              >
-              <input type="datetime-local" id="clientArrivalTime" required />
-            </div>
-            <div class="form-group">
-              <label for="clientDepartureTime"
-                ><i class="fas fa-clock"></i> Heure de départ de chez le
-                client</label
-              >
-              <input type="datetime-local" id="clientDepartureTime" required />
-            </div>
-
-            <div class="form-group">
-              <label for="kribiArrivalDate"
-                ><i class="fas fa-map-marker-alt"></i> Date d'arrivée à
-                Kribi</label
-              >
-              <input type="datetime-local" id="kribiArrivalDate" required />
-            </div>
-            <div class="form-group">
-              <label for="containerPositioningDate"
-                ><i class="fas fa-calendar"></i> Date de positionnement</label
-              >
-              <input
-                type="datetime-local"
-                id="containerPositioningDate"
-                required
-              />
-            </div>
-
-            <div class="form-group">
-              <label for="containerPositioningLocation"
-                ><i class="fas fa-map-pin"></i> Lieu de positionnement</label
-              >
-              <input type="text" id="containerPositioningLocation" required />
-            </div>
-
-            <div class="form-group full-width">
-              <label for="documentation"
-                ><i class="fas fa-file-alt"></i> Documentations (bordereau de
-                livraison)</label
-              >
-              <textarea id="documentation" rows="3"></textarea>
-            </div>
-
-            <div class="form-group full-width">
-              <label for="incidents"
-                ><i class="fas fa-exclamation-triangle"></i>
-                Incidents/Remarques</label
-              >
-              <textarea id="incidents" rows="2"></textarea>
-            </div>
-
-            <div class="form-group">
-              <label for="carburantDepart"
-                ><i class="fas fa-gas-pump"></i> Carburant départ (L)</label
-              >
-              <input type="number" id="carburantDepart" step="0.1" required />
-            </div>
-
-            <div class="form-group">
-              <label for="carburantRetour"
-                ><i class="fas fa-gas-pump"></i> Carburant retour (L)</label
-              >
-              <input type="number" id="carburantRetour" step="0.1" required />
-            </div>
-
-            <div class="form-group">
-              <label for="statut"
-                ><i class="fas fa-check-circle"></i> Statut</label
-              >
-              <select id="statut">
-                <option value="complet">Complet</option>
-                <option value="en-cours">En cours</option>
-                <option value="retard">Retard</option>
-                <option value="annule">Annulé</option>
-              </select>
-            </div>
-          </div>
-
-          <button type="submit" id="submitBtn" class="btn-submit">
-            <i class="fas fa-save"></i> Enregistrer
+        <div class="form-section-header">
+          <h2><i class="fas fa-plus-circle"></i> Ajouter un voyage</h2>
+          <button
+            id="toggleFormBtn"
+            class="btn-toggle"
+            aria-expanded="false"
+            aria-controls="voyageFormWrap"
+            title="Afficher/Masquer le formulaire"
+          >
+            <i class="fas fa-chevron-down" aria-hidden="true"></i>
           </button>
-        </form>
+        </div>
+        <div id="voyageFormWrap" class="collapse" hidden>
+          <form id="voyageForm">
+            <div class="form-grid">
+              <div class="form-group">
+                <label for="chauffeur"
+                  ><i class="fas fa-user"></i> Nom du chauffeur</label
+                >
+                <input type="text" id="chauffeur" required />
+              </div>
+
+              <div class="form-group">
+                <label for="camion"
+                  ><i class="fas fa-truck"></i> No. D'immatriculation</label
+                >
+                <input type="text" id="camion" required />
+              </div>
+
+              <div class="form-group">
+                <label for="destination"
+                  ><i class="fas fa-map-marker-alt"></i> Destination</label
+                >
+                <input type="text" id="destination" required />
+              </div>
+
+              <div class="form-group">
+                <label for="distance"
+                  ><i class="fas fa-road"></i> Distance (km)</label
+                >
+                <input type="number" id="distance" required />
+              </div>
+
+              <div class="form-group">
+                <label for="dateDepart"
+                  ><i class="fas fa-calendar-alt"></i> Date départ</label
+                >
+                <input type="datetime-local" id="dateDepart" required />
+              </div>
+
+              <div class="form-group">
+                <label for="clientArrivalTime"
+                  ><i class="fas fa-clock"></i> Heure d'arrivée chez le
+                  client</label
+                >
+                <input type="datetime-local" id="clientArrivalTime" required />
+              </div>
+              <div class="form-group">
+                <label for="clientDepartureTime"
+                  ><i class="fas fa-clock"></i> Heure de départ de chez le
+                  client</label
+                >
+                <input
+                  type="datetime-local"
+                  id="clientDepartureTime"
+                  required
+                />
+              </div>
+
+              <div class="form-group">
+                <label for="kribiArrivalDate"
+                  ><i class="fas fa-map-marker-alt"></i> Date d'arrivée à
+                  Kribi</label
+                >
+                <input type="datetime-local" id="kribiArrivalDate" required />
+              </div>
+              <div class="form-group">
+                <label for="containerPositioningDate"
+                  ><i class="fas fa-calendar"></i> Date de positionnement</label
+                >
+                <input
+                  type="datetime-local"
+                  id="containerPositioningDate"
+                  required
+                />
+              </div>
+
+              <div class="form-group">
+                <label for="containerPositioningLocation"
+                  ><i class="fas fa-map-pin"></i> Lieu de positionnement</label
+                >
+                <input type="text" id="containerPositioningLocation" required />
+              </div>
+
+              <div class="form-group full-width">
+                <label for="documentation"
+                  ><i class="fas fa-file-alt"></i> Documentations (bordereau de
+                  livraison)</label
+                >
+                <textarea id="documentation" rows="3"></textarea>
+              </div>
+
+              <div class="form-group full-width">
+                <label for="incidents"
+                  ><i class="fas fa-exclamation-triangle"></i>
+                  Incidents/Remarques</label
+                >
+                <textarea id="incidents" rows="2"></textarea>
+              </div>
+
+              <div class="form-group">
+                <label for="carburantDepart"
+                  ><i class="fas fa-gas-pump"></i> Carburant départ (L)</label
+                >
+                <input type="number" id="carburantDepart" step="0.1" required />
+              </div>
+
+              <div class="form-group">
+                <label for="carburantRetour"
+                  ><i class="fas fa-gas-pump"></i> Carburant retour (L)</label
+                >
+                <input type="number" id="carburantRetour" step="0.1" required />
+              </div>
+
+              <div class="form-group">
+                <label for="statut"
+                  ><i class="fas fa-check-circle"></i> Statut</label
+                >
+                <select id="statut">
+                  <option value="complet">Complet</option>
+                  <option value="en-cours">En cours</option>
+                  <option value="retard">Retard</option>
+                  <option value="annule">Annulé</option>
+                </select>
+              </div>
+            </div>
+
+            <button type="submit" id="submitBtn" class="btn-submit">
+              <i class="fas fa-save"></i> Enregistrer
+            </button>
+          </form>
+        </div>
       </section>
 
       <section class="controls-section">
