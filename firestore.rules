@@ -1,0 +1,53 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Allow reads to everyone for now
+    match /{document=**} {
+      allow read: if true;
+    }
+
+    function isEditor() {
+      return request.auth != null && (
+        // Whitelist emails here
+        request.auth.token.email in [
+          'alain@gmail.com'
+          // , 'editor@example.com'
+        ]
+      );
+    }
+
+    // Validate voyage document shape
+    function validVoyage(data) {
+      return data.keys().hasAll(['chauffeur','camion','destination','distance','dateDepart','clientArrivalTime','clientDepartureTime','kribiArrivalDate','containerPositioningDate','containerPositioningLocation','documentation','incidents','carburantDepart','carburantRetour','statut','societe']) &&
+        data.distance is number && data.distance >= 0 &&
+        data.carburantDepart is number && data.carburantDepart >= 0 &&
+        data.carburantRetour is number && data.carburantRetour >= 0 &&
+        data.statut in ['complet','en-cours','retard','annule'] &&
+        data.societe in ['KIS','UTA'] &&
+        data.dateDepart is timestamp &&
+        data.clientArrivalTime is timestamp &&
+        data.clientDepartureTime is timestamp &&
+        data.kribiArrivalDate is timestamp &&
+        data.containerPositioningDate is timestamp;
+    }
+
+    match /voyages/{id} {
+      allow create: if isEditor() && validVoyage(request.resource.data);
+      allow update: if isEditor() && validVoyage(request.resource.data);
+      allow delete: if isEditor();
+      allow read: if true;
+    }
+
+    // Settings document for global app configuration
+    match /settings/{docId} {
+      allow read: if true;
+      allow write: if isEditor() && request.resource.data.keys().hasOnly(['activeTrucks','updatedAt','updatedBy']) &&
+        (
+          !('activeTrucks' in request.resource.data) ||
+          (request.resource.data.activeTrucks is number && request.resource.data.activeTrucks >= 0)
+        ) &&
+        (request.resource.data.updatedAt is timestamp) &&
+        (request.resource.data.updatedBy is string);
+    }
+  }
+}

@@ -302,6 +302,18 @@ button {
     border: 1px solid #e1e7ed;
 }
 
+/* Center the table horizontally on wide screens */
+.table-container.centered {
+    display: flex;
+    justify-content: center;
+}
+
+.table-container.centered table {
+    width: auto; /* allow intrinsic table width */
+    min-width: 1000px; /* keep the same minimum */
+    margin: 0 auto;
+}
+
 table {
     width: 100%;
     border-collapse: separate;
@@ -724,4 +736,59 @@ footer {
 .status-badge.secondary {
     background-color: #6c757d;
     color: white;
+}
+
+/* ------------------ Loader Overlay ------------------ */
+.loader-overlay {
+    position: fixed;
+    inset: 0;
+    width: 100vw;
+    height: 100vh;
+    background: linear-gradient(180deg, #ffffff 0%, #f4f7fb 100%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 2000;
+    transition: opacity 300ms ease;
+}
+
+.loader-overlay.hidden {
+    opacity: 0;
+    pointer-events: none;
+}
+
+.loader-card {
+    background: #fff;
+    border-radius: 16px;
+    padding: 28px 32px;
+    box-shadow: 0 12px 40px rgba(0,0,0,0.12);
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    border: 1px solid #e7eef7;
+}
+
+.spinner {
+    width: 34px;
+    height: 34px;
+    border: 3px solid #dfe7f3;
+    border-top-color: var(--secondary);
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+}
+
+.loader-text {
+    font-weight: 600;
+    color: var(--primary);
+    letter-spacing: 0.2px;
+}
+
+@keyframes spin {
+    to { transform: rotate(360deg); }
+}
+
+/* Reduced motion preferences */
+@media (prefers-reduced-motion: reduce) {
+    .loader-overlay { transition: none; }
+    .spinner { animation: none; }
 }

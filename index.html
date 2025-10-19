@@ -1,209 +1,322 @@
 <!DOCTYPE html>
 <html lang="fr">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Suivi Camions - KIS/UTA</title>
-    <link rel="stylesheet" href="style.css">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-</head>
-<body>
+    <link rel="stylesheet" href="style.css" />
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"
+    />
+  </head>
+  <body>
+    <!-- App Loader -->
+    <div
+      id="app-loader"
+      class="loader-overlay"
+      aria-live="polite"
+      aria-busy="true"
+    >
+      <div class="loader-card">
+        <div class="spinner" aria-hidden="true"></div>
+        <div class="loader-text">Chargement…</div>
+      </div>
+    </div>
+
     <header>
-        <div class="header-container">
-            <div class="logo-header">
-                <div class="dual-logo">
-                    <img src="img/logo.jpg" alt="Logo KIS" class="logo">
-                    <img src="img/uta-logo.jpg" alt="Logo UTA" class="logo">
-                </div>
-                <div>
-                    <h1>Kribi Inland Services & United Transport Africa</h1>
-                    <h3>Suivi des camions et chauffeurs</h3>
-                </div>
-            </div>
-            <div class="user-info">
-                <div class="user-details">
-                    <span class="user-name">TCHIO NGOUMO ALAIN</span>
-                    <span class="user-role">Agent Logistique</span>
-                </div>
-                <i class="fas fa-user-circle"></i>
-            </div>
+      <div class="header-container">
+        <div class="logo-header">
+          <div class="dual-logo">
+            <img src="img/logo.jpg" alt="Logo KIS" class="logo" />
+            <img src="img/uta-logo.jpg" alt="Logo UTA" class="logo" />
+          </div>
+          <div>
+            <h1>Kribi Inland Services & United Transport Africa</h1>
+            <h3>Suivi des camions et chauffeurs</h3>
+          </div>
         </div>
+        <div class="user-info">
+          <div class="user-details">
+            <span class="user-name" id="userName">Invité</span>
+            <span class="user-role" id="userRole">Lecture seule</span>
+          </div>
+          <button id="loginBtn" class="btn-export" title="Se connecter">
+            <i class="fas fa-sign-in-alt"></i> Connexion
+          </button>
+          <button
+            id="logoutBtn"
+            class="btn-export"
+            title="Se déconnecter"
+            style="display: none"
+          >
+            <i class="fas fa-sign-out-alt"></i> Déconnexion
+          </button>
+        </div>
+      </div>
     </header>
 
     <main class="container">
-        <section class="dashboard">
-            <div class="stats-card">
-                <div class="card-header">
-                    <i class="fas fa-truck"></i>
-                    <h3>Camions actifs</h3>
-                    <i class="fas fa-edit edit-icon" id="edit-trucks"></i>
-                </div>
-                <span id="active-trucks"></span>
-            </div>
-            <div class="stats-card">
-                <i class="fas fa-building"></i>
-                <h3>Société</h3>
-                <select id="company-selector">
-                    <option value="KIS">Kribi Inland Services</option>
-                    <option value="UTA">UTA Cameroun SA</option>
-                </select>
-            </div>
-        </section>
+      <section class="dashboard">
+        <div class="stats-card">
+          <div class="card-header">
+            <i class="fas fa-truck"></i>
+            <h3>Camions actifs</h3>
+            <i class="fas fa-edit edit-icon" id="edit-trucks"></i>
+          </div>
+          <span id="active-trucks">4</span>
+        </div>
+        <div class="stats-card">
+          <i class="fas fa-building"></i>
+          <h3>Société</h3>
+          <select id="company-selector">
+            <option value="KIS">Kribi Inland Services</option>
+            <option value="UTA">UTA Cameroun SA</option>
+          </select>
+        </div>
+      </section>
 
-        <!-- Modal pour l'édition -->
-        <div id="edit-modal" class="modal">
-            <div class="modal-content">
-                <span class="close">&times;</span>
-                <h3>Modifier le nombre de camions actifs</h3>
-                <input type="number" id="trucks-input" min="0" step="1" value="23">
-                <button id="save-trucks" class="btn-submit">Enregistrer</button>
+      <!-- Modal pour l'édition -->
+      <div id="edit-modal" class="modal">
+        <div class="modal-content">
+          <span class="close">&times;</span>
+          <h3>Modifier le nombre de camions actifs</h3>
+          <input type="number" id="trucks-input" min="0" step="1" value="23" />
+          <button id="save-trucks" class="btn-submit">Enregistrer</button>
+        </div>
+      </div>
+
+      <!-- Auth Modal -->
+      <div id="auth-modal" class="modal">
+        <div class="modal-content">
+          <span class="close" data-close="auth-modal">&times;</span>
+          <h3><i class="fas fa-lock"></i> Connexion</h3>
+          <div class="form-group">
+            <label for="authEmail"><i class="fas fa-at"></i> Email</label>
+            <input type="email" id="authEmail" placeholder="vous@exemple.com" />
+          </div>
+          <div class="form-group">
+            <label for="authPassword"
+              ><i class="fas fa-key"></i> Mot de passe</label
+            >
+            <input type="password" id="authPassword" placeholder="••••••••" />
+          </div>
+          <div class="form-group">
+            <button id="authLogin" class="btn-export">
+              <i class="fas fa-sign-in-alt"></i> Se connecter
+            </button>
+          </div>
+          <p id="authError" style="color: #dc3545; display: none"></p>
+        </div>
+      </div>
+
+      <section class="form-section">
+        <h2><i class="fas fa-plus-circle"></i> Ajouter un voyage</h2>
+        <form id="voyageForm">
+          <div class="form-grid">
+            <div class="form-group">
+              <label for="chauffeur"
+                ><i class="fas fa-user"></i> Nom du chauffeur</label
+              >
+              <input type="text" id="chauffeur" required />
             </div>
+
+            <div class="form-group">
+              <label for="camion"
+                ><i class="fas fa-truck"></i> No. D'immatriculation</label
+              >
+              <input type="text" id="camion" required />
+            </div>
+
+            <div class="form-group">
+              <label for="destination"
+                ><i class="fas fa-map-marker-alt"></i> Destination</label
+              >
+              <input type="text" id="destination" required />
+            </div>
+
+            <div class="form-group">
+              <label for="distance"
+                ><i class="fas fa-road"></i> Distance (km)</label
+              >
+              <input type="number" id="distance" required />
+            </div>
+
+            <div class="form-group">
+              <label for="dateDepart"
+                ><i class="fas fa-calendar-alt"></i> Date départ</label
+              >
+              <input type="datetime-local" id="dateDepart" required />
+            </div>
+
+            <div class="form-group">
+              <label for="clientArrivalTime"
+                ><i class="fas fa-clock"></i> Heure d'arrivée chez le
+                client</label
+              >
+              <input type="datetime-local" id="clientArrivalTime" required />
+            </div>
+            <div class="form-group">
+              <label for="clientDepartureTime"
+                ><i class="fas fa-clock"></i> Heure de départ de chez le
+                client</label
+              >
+              <input type="datetime-local" id="clientDepartureTime" required />
+            </div>
+
+            <div class="form-group">
+              <label for="kribiArrivalDate"
+                ><i class="fas fa-map-marker-alt"></i> Date d'arrivée à
+                Kribi</label
+              >
+              <input type="datetime-local" id="kribiArrivalDate" required />
+            </div>
+            <div class="form-group">
+              <label for="containerPositioningDate"
+                ><i class="fas fa-calendar"></i> Date de positionnement</label
+              >
+              <input
+                type="datetime-local"
+                id="containerPositioningDate"
+                required
+              />
+            </div>
+
+            <div class="form-group">
+              <label for="containerPositioningLocation"
+                ><i class="fas fa-map-pin"></i> Lieu de positionnement</label
+              >
+              <input type="text" id="containerPositioningLocation" required />
+            </div>
+
+            <div class="form-group full-width">
+              <label for="documentation"
+                ><i class="fas fa-file-alt"></i> Documentations (bordereau de
+                livraison)</label
+              >
+              <textarea id="documentation" rows="3"></textarea>
+            </div>
+
+            <div class="form-group full-width">
+              <label for="incidents"
+                ><i class="fas fa-exclamation-triangle"></i>
+                Incidents/Remarques</label
+              >
+              <textarea id="incidents" rows="2"></textarea>
+            </div>
+
+            <div class="form-group">
+              <label for="carburantDepart"
+                ><i class="fas fa-gas-pump"></i> Carburant départ (L)</label
+              >
+              <input type="number" id="carburantDepart" step="0.1" required />
+            </div>
+
+            <div class="form-group">
+              <label for="carburantRetour"
+                ><i class="fas fa-gas-pump"></i> Carburant retour (L)</label
+              >
+              <input type="number" id="carburantRetour" step="0.1" required />
+            </div>
+
+            <div class="form-group">
+              <label for="statut"
+                ><i class="fas fa-check-circle"></i> Statut</label
+              >
+              <select id="statut">
+                <option value="complet">Complet</option>
+                <option value="en-cours">En cours</option>
+                <option value="retard">Retard</option>
+                <option value="annule">Annulé</option>
+              </select>
+            </div>
+          </div>
+
+          <button type="submit" id="submitBtn" class="btn-submit">
+            <i class="fas fa-save"></i> Enregistrer
+          </button>
+        </form>
+      </section>
+
+      <section class="controls-section">
+        <div class="search-filter">
+          <div class="search-box">
+            <i class="fas fa-search"></i>
+            <input type="text" id="searchInput" placeholder="Rechercher..." />
+          </div>
+
+          <div class="filters">
+            <select id="filterSelect">
+              <option value="chauffeur">Trier par chauffeur</option>
+              <option value="camion">Trier par camion</option>
+              <option value="dateDepart">Trier par date</option>
+              <option value="societe">Trier par société</option>
+              <option value="destination">Trier par destination</option>
+              <option value="performance">Meilleure performance</option>
+            </select>
+
+            <select id="timeFilter">
+              <option value="all">Toutes dates</option>
+              <option value="today">Aujourd'hui</option>
+              <option value="week">Cette semaine</option>
+              <option value="month">Ce mois</option>
+            </select>
+
+            <select id="companyFilter" title="Filtrer par société">
+              <option value="all">Toutes sociétés</option>
+              <option value="KIS">KIS</option>
+              <option value="UTA">UTA</option>
+            </select>
+
+            <select id="statusFilter" title="Filtrer par statut">
+              <option value="all">Tous statuts</option>
+              <option value="complet">Complet</option>
+              <option value="en-cours">En cours</option>
+              <option value="retard">Retard</option>
+              <option value="annule">Annulé</option>
+            </select>
+          </div>
         </div>
 
-        <section class="form-section">
-            <h2><i class="fas fa-plus-circle"></i> Ajouter un voyage</h2>
-            <form id="voyageForm">
-                <div class="form-grid">
-                    <div class="form-group">
-                        <label for="chauffeur"><i class="fas fa-user"></i> Nom du chauffeur</label>
-                        <input type="text" id="chauffeur" required>
-                    </div>
-                    
-                    <div class="form-group">
-                        <label for="camion"><i class="fas fa-truck"></i> No. D'immatriculation</label>
-                        <input type="text" id="camion" required>
-                    </div>
-                    
-                    <div class="form-group">
-                        <label for="destination"><i class="fas fa-map-marker-alt"></i> Destination</label>
-                        <input type="text" id="destination" required>
-                    </div>
-                    
-                    <div class="form-group">
-                        <label for="distance"><i class="fas fa-road"></i> Distance (km)</label>
-                        <input type="number" id="distance" required>
-                    </div>
-                    
-                    <div class="form-group">
-                        <label for="dateDepart"><i class="fas fa-calendar-alt"></i> Date départ</label>
-                        <input type="datetime-local" id="dateDepart" required>
-                    </div>
-               
-                    <div class="form-group">
-                        <label for="clientArrivalTime"><i class="fas fa-clock"></i> Heure d'arrivée chez le client</label>
-                        <input type="datetime-local" id="clientArrivalTime" required>
-                    </div>
-                    <div class="form-group">
-                        <label for="clientDepartureTime"><i class="fas fa-clock"></i> Heure de départ de chez le client</label>
-                        <input type="datetime-local" id="clientDepartureTime" required>
-                    </div>
+        <div class="export-buttons">
+          <button id="exportExcel" class="btn-export">
+            <i class="fas fa-file-excel"></i> Export Excel
+          </button>
+          <button id="exportPDF" class="btn-export">
+            <i class="fas fa-file-pdf"></i> Export PDF
+          </button>
+          <button id="driverReport" class="btn-export">
+            <i class="fas fa-chart-bar"></i> Rapport chauffeur
+          </button>
+          <button id="openAnalytics" class="btn-export" title="Tableau de bord">
+            <i class="fas fa-chart-line"></i> Tableau de bord
+          </button>
+        </div>
+      </section>
 
-                    <div class="form-group">
-                        <label for="kribiArrivalDate"><i class="fas fa-map-marker-alt"></i> Date d'arrivée à Kribi</label>
-                        <input type="datetime-local" id="kribiArrivalDate" required>
-                    </div>
-                    <div class="form-group">
-                        <label for="containerPositioningDate"><i class="fas fa-calendar"></i> Date de positionnement</label>
-                        <input type="datetime-local" id="containerPositioningDate" required>
-                    </div>
-                    
-                    <div class="form-group">
-                        <label for="containerPositioningLocation"><i class="fas fa-map-pin"></i> Lieu de positionnement</label>
-                        <input type="text" id="containerPositioningLocation" required>
-                    </div>
-                    
-                    <div class="form-group full-width">
-                        <label for="documentation"><i class="fas fa-file-alt"></i> Documentations (bordereau de livraison)</label>
-                        <textarea id="documentation" rows="3"></textarea>
-                    </div>
-                    
-                    <div class="form-group full-width">
-                        <label for="incidents"><i class="fas fa-exclamation-triangle"></i> Incidents/Remarques</label>
-                        <textarea id="incidents" rows="2"></textarea>
-                    </div>
-                    
-                    <div class="form-group">
-                        <label for="carburantDepart"><i class="fas fa-gas-pump"></i> Carburant départ (L)</label>
-                        <input type="number" id="carburantDepart" step="0.1" required>
-                    </div>
-                    
-                    <div class="form-group">
-                        <label for="carburantRetour"><i class="fas fa-gas-pump"></i> Carburant retour (L)</label>
-                        <input type="number" id="carburantRetour" step="0.1" required>
-                    </div>
-                    
-                    <div class="form-group">
-                        <label for="statut"><i class="fas fa-check-circle"></i> Statut</label>
-                        <select id="statut">
-                            <option value="complet">Complet</option>
-                            <option value="en-cours">En cours</option>
-                            <option value="retard">Retard</option>
-                            <option value="annule">Annulé</option>
-                        </select>
-                    </div>
-                </div>
+      <section class="table-section">
+        <div class="table-header">
+          <h2><i class="fas fa-table"></i> Historique des voyages</h2>
+          <div class="summary">
+            <span id="voyageCount">0 voyages</span>
+            <span id="avgEfficiency">Efficacité: 0.0 km/L</span>
+          </div>
+        </div>
 
-                <button type="submit" class="btn-submit">
-                    <i class="fas fa-save"></i> Enregistrer
-                </button>
-            </form>
-        </section>
-
-        <section class="controls-section">
-            <div class="search-filter">
-                <div class="search-box">
-                    <i class="fas fa-search"></i>
-                    <input type="text" id="searchInput" placeholder="Rechercher...">
-                </div>
-                
-                <div class="filters">
-                    <select id="filterSelect">
-                        <option value="chauffeur">Trier par chauffeur</option>
-                        <option value="camion">Trier par camion</option>
-                        <option value="dateDepart">Trier par date</option>
-                        <option value="destination">Trier par destination</option>
-                        <option value="performance">Meilleure performance</option>
-                    </select>
-                    
-                    <select id="timeFilter">
-                        <option value="all">Toutes dates</option>
-                        <option value="today">Aujourd'hui</option>
-                        <option value="week">Cette semaine</option>
-                        <option value="month">Ce mois</option>
-                    </select>
-                </div>
-            </div>
-
-            <div class="export-buttons">
-                <button id="exportExcel" class="btn-export">
-                    <i class="fas fa-file-excel"></i> Export Excel
-                </button>
-                <button id="exportPDF" class="btn-export">
-                    <i class="fas fa-file-pdf"></i> Export PDF
-                </button>
-                <button id="driverReport" class="btn-export">
-                    <i class="fas fa-chart-bar"></i> Rapport chauffeur
-                </button>
-            </div>
-        </section>
-
-        <section class="table-section">
-            <div class="table-header">
-                <h2><i class="fas fa-table"></i> Historique des voyages</h2>
-                <div class="summary">
-                    <span id="voyageCount">0 voyages</span>
-                    <span id="avgEfficiency">Efficacité: 0.0 km/L</span>
-                </div>
-            </div>
-            
-            <div class="table-container">
-    <table id="voyagesTable">
-        <thead>
-            <tr>
-                <th data-sort="chauffeur"><i class="fas fa-user"></i> Chauffeur</th>
+        <div class="table-container centered">
+          <table id="voyagesTable">
+            <thead>
+              <tr>
+                <th data-sort="chauffeur">
+                  <i class="fas fa-user"></i> Chauffeur
+                </th>
                 <th data-sort="camion"><i class="fas fa-truck"></i> Camion</th>
-                <th><i class="fas fa-building"></i> Société</th>
-                <th data-sort="dateDepart"><i class="fas fa-calendar-alt"></i> Départ</th>
+                <th data-sort="societe">
+                  <i class="fas fa-building"></i> Société
+                </th>
+                <th data-sort="dateDepart">
+                  <i class="fas fa-calendar-alt"></i> Départ
+                </th>
                 <th><i class="fas fa-clock"></i> Arrivée client</th>
                 <th><i class="fas fa-clock"></i> Départ client</th>
                 <th><i class="fas fa-map-marker-alt"></i> Arrivée Kribi</th>
@@ -216,114 +329,57 @@
                 <th><i class="fas fa-exclamation-triangle"></i> Incidents</th>
                 <th><i class="fas fa-check-circle"></i> Statut</th>
                 <th><i class="fas fa-cogs"></i> Actions</th>
-            </tr>
-        </thead>
-        <tbody>
-            <!-- Les données seront ajoutées ici dynamiquement -->
-            <tr>
-                <td>Jean Dupont</td>
-                <td>ABC-123</td>
-                <td>KIS</td>
-                <td>12/05/2023 08:00</td>
-                <td>12/05/2023 10:30</td>
-                <td>12/05/2023 11:45</td>
-                <td>13/05/2023 14:20</td>
-                <td>
-                    13/05/2023 16:00<br>
-                    Zone portuaire
-                </td>
-                <td>350 km</td>
-                <td>150 L</td>
-                <td>45 L</td>
-                <td class="performance-good">
-                    <i class="fas fa-check-circle"></i> 6.8 km/L
-                </td>
-                <td>Bordereau #4587</td>
-                <td>Aucun incident</td>
-                <td>Complet</td>
-                <td>
-                    <button class="btn-edit">
-                        <i class="fas fa-edit"></i> Modifier
-                    </button>
-                    <button class="btn-delete">
-                        <i class="fas fa-trash"></i> Supprimer
-                    </button>
-                </td>
-            </tr>
-            <tr>
-                <td>Marie Lambert</td>
-                <td>XYZ-789</td>
-                <td>UTA</td>
-                <td>14/05/2023 07:30</td>
-                <td>14/05/2023 09:15</td>
-                <td>14/05/2023 10:45</td>
-                <td>15/05/2023 12:30</td>
-                <td>
-                    15/05/2023 14:00<br>
-                    Entrepôt Douala
-                </td>
-                <td>420 km</td>
-                <td>180 L</td>
-                <td>60 L</td>
-                <td class="performance-medium">
-                    <i class="fas fa-exclamation-circle"></i> 4.2 km/L
-                </td>
-                <td>Bordereau #4590</td>
-                <td>Retard livraison</td>
-                <td>Retard</td>
-                <td>
-                    <button class="btn-edit">
-                        <i class="fas fa-edit"></i> Modifier
-                    </button>
-                    <button class="btn-delete">
-                        <i class="fas fa-trash"></i> Supprimer
-                    </button>
-                </td>
-            </tr>
-        </tbody>
-    </table>
-</div>
-        </section>
+              </tr>
+            </thead>
+            <tbody>
+              <!-- Les données seront ajoutées ici dynamiquement -->
+            </tbody>
+          </table>
+        </div>
+      </section>
     </main>
 
     <footer>
-        <div class="footer-container">
-            <div class="footer-logo">
-                <div class="dual-logo-small">
-                    <img src="img/logo.jpg" alt="Logo KIS" class="logo-small">
-                    <img src="img/uta-logo.jpg" alt="Logo UTA" class="logo-small">
-                </div>
-                <div>
-                    <h3>Kribi Inland Services & UTA Cameroun SA</h3>
-                    <p>Services de transport et logistique</p>
-                </div>
-            </div>
-            
-            <div class="footer-contact">
-                <p><i class="fas fa-map-marker-alt"></i> Kribi, Cameroun</p>
-                <p><i class="fas fa-phone"></i> 657 60 08 55 / 681 23 33 07</p>
-                <p><i class="fas fa-envelope"></i> alain.tchio@kis-kribi.org</p>
-            </div>
-            
-            <div class="footer-info">
-                <p>Responsable: TCHIO NGOUMO ALAIN</p>
-                <p>Fonction: Agent Logistique</p>
-                <p>Dernière mise à jour: <span id="lastUpdate"></span></p>
-                <p>&copy; <span id="currentYear"></span> KIS/UTA. Tous droits réservés.</p>
-            </div>
+      <div class="footer-container">
+        <div class="footer-logo">
+          <div class="dual-logo-small">
+            <img src="img/logo.jpg" alt="Logo KIS" class="logo-small" />
+            <img src="img/uta-logo.jpg" alt="Logo UTA" class="logo-small" />
+          </div>
+          <div>
+            <h3>Kribi Inland Services & UTA Cameroun SA</h3>
+            <p>Services de transport et logistique</p>
+          </div>
         </div>
+
+        <div class="footer-contact">
+          <p><i class="fas fa-map-marker-alt"></i> Kribi, Cameroun</p>
+          <p><i class="fas fa-phone"></i> 657 60 08 55 / 681 23 33 07</p>
+          <p><i class="fas fa-envelope"></i> alain.tchio@kis-kribi.org</p>
+        </div>
+
+        <div class="footer-info">
+          <p>Responsable: TCHIO NGOUMO ALAIN</p>
+          <p>Fonction: Agent Logistique</p>
+          <p>Dernière mise à jour: <span id="lastUpdate"></span></p>
+          <p>
+            &copy; <span id="currentYear"></span> KIS/UTA. Tous droits réservés.
+          </p>
+        </div>
+      </div>
     </footer>
 
     <!-- Firebase -->
     <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-firestore-compat.js"></script>
-    
+
     <!-- Bibliothèques externes -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.25/jspdf.plugin.autotable.min.js"></script>
-    
+
     <!-- Script principal -->
     <script src="script.js"></script>
-</body>
+  </body>
 </html>
