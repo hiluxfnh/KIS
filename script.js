@@ -460,6 +460,7 @@ function renderTable(data) {
             <td>${voyage.chauffeur || ""}</td>
             <td>${voyage.camion || ""}</td>
             <td>${voyage.societe || "KIS"}</td>
+      <td>${voyage.destination || ""}</td>
             <td>${formatDate(voyage.dateDepart)}</td>
             <td>${formatDate(voyage.clientArrivalTime)}</td>
             <td>${formatDate(voyage.clientDepartureTime)}</td>
@@ -494,6 +495,9 @@ function renderTable(data) {
   document.querySelectorAll(".btn-edit, .btn-delete").forEach((btn) => {
     btn.style.display = canEdit ? "inline-flex" : "none";
   });
+  // Ensure the table scroll starts at the left edge after render
+  const container = document.querySelector(".table-container");
+  if (container) container.scrollLeft = 0;
 }
 
 // Fonction pour les badges de statut
