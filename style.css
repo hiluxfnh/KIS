@@ -216,6 +216,13 @@ h2 {
     margin-bottom: 15px;
 }
 
+.form-hint {
+    display: block;
+    margin-top: 6px;
+    font-size: 0.85rem;
+    color: #6c757d;
+}
+
 .form-group.full-width {
     grid-column: 1 / -1;
 }
@@ -368,6 +375,25 @@ th, td {
     border-bottom: 1px solid #e1e7ed;
 }
 
+/* Sticky first column for readability on horizontal scroll */
+table th:first-child, table td:first-child {
+    position: sticky;
+    left: 0;
+    z-index: 2;
+}
+/* Keep first data column cells white, but let the first header cell use the blue header background */
+table td:first-child {
+    background: #fff;
+}
+table th:first-child {
+    z-index: 3;
+    background: var(--primary);
+}
+/* Ensure hover color also applies to the first header cell */
+table th:first-child:hover {
+    background: #152a4f;
+}
+
 th {
     background: var(--primary);
     color: white;
@@ -397,6 +423,9 @@ tbody tr:nth-child(even) {
 tbody tr:hover {
     background: #edf4ff;
 }
+
+/* Column visibility helpers */
+.col-hidden { display: none; }
 
 .performance-good {
     color: var(--success);
@@ -735,15 +764,15 @@ footer {
 }
 
 /* Adaptation du tableau */
-/* Ensure date/time columns have enough room (indexes shifted after adding Destination) */
-.table-container table th:nth-child(5),
-.table-container table td:nth-child(5),
+/* Ensure date/time columns have enough room (indexes after adding N° ordre + Destination) */
 .table-container table th:nth-child(6),
 .table-container table td:nth-child(6),
 .table-container table th:nth-child(7),
 .table-container table td:nth-child(7),
 .table-container table th:nth-child(8),
-.table-container table td:nth-child(8) {
+.table-container table td:nth-child(8),
+.table-container table th:nth-child(9),
+.table-container table td:nth-child(9) {
     min-width: 120px;
 }
 

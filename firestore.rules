@@ -18,17 +18,34 @@ service cloud.firestore {
 
     // Validate voyage document shape
     function validVoyage(data) {
-      return data.keys().hasAll(['chauffeur','camion','destination','distance','dateDepart','clientArrivalTime','clientDepartureTime','kribiArrivalDate','containerPositioningDate','containerPositioningLocation','documentation','incidents','carburantDepart','carburantRetour','statut','societe']) &&
-        data.distance is number && data.distance >= 0 &&
-        data.carburantDepart is number && data.carburantDepart >= 0 &&
-        data.carburantRetour is number && data.carburantRetour >= 0 &&
-        data.statut in ['complet','en-cours','retard','annule'] &&
-        data.societe in ['KIS','UTA'] &&
-        data.dateDepart is timestamp &&
-        data.clientArrivalTime is timestamp &&
-        data.clientDepartureTime is timestamp &&
-        data.kribiArrivalDate is timestamp &&
-        data.containerPositioningDate is timestamp;
+      return
+        // Required basics
+        (data.chauffeur is string) &&
+        (data.camion is string) &&
+        (data.societe in ['KIS','UTA']) &&
+        (data.statut in ['complet','en-cours','retard','annule']) &&
+
+        // Optional strings
+        (!('destination' in data) || data.destination is string) &&
+        (!('documentation' in data) || data.documentation is string) &&
+        (!('incidents' in data) || data.incidents is string) &&
+        (!('containerPositioningLocation' in data) || data.containerPositioningLocation is string) &&
+    (!('numeroOrdreTransport' in data) || data.numeroOrdreTransport is string) &&
+    (!('villeDepart' in data) || data.villeDepart is string) &&
+
+        // Optional numbers
+        (!('distance' in data) || (data.distance is number && data.distance >= 0)) &&
+        (!('carburantDepart' in data) || (data.carburantDepart is number && data.carburantDepart >= 0)) &&
+        (!('carburantRetour' in data) || (data.carburantRetour is number && data.carburantRetour >= 0)) &&
+        // If both carburants provided, retour cannot exceed depart
+        (!('carburantDepart' in data && 'carburantRetour' in data) || data.carburantRetour <= data.carburantDepart) &&
+
+        // Optional timestamps
+        (!('dateDepart' in data) || data.dateDepart is timestamp) &&
+        (!('clientArrivalTime' in data) || data.clientArrivalTime is timestamp) &&
+        (!('clientDepartureTime' in data) || data.clientDepartureTime is timestamp) &&
+        (!('kribiArrivalDate' in data) || data.kribiArrivalDate is timestamp) &&
+        (!('containerPositioningDate' in data) || data.containerPositioningDate is timestamp);
     }
 
     match /voyages/{id} {

@@ -57,6 +57,8 @@ function showNotification(message, type = "info") {
       container.style.top = "16px";
       container.style.right = "16px";
       container.style.zIndex = "9999";
+      container.setAttribute("aria-live", "polite");
+      container.setAttribute("role", "status");
       document.body.appendChild(container);
     }
     const note = document.createElement("div");
@@ -158,7 +160,15 @@ const avgEfficiencySpan = document.getElementById("avgEfficiency");
 const submitBtn = document.getElementById("submitBtn");
 const companyFilter = document.getElementById("companyFilter");
 const statusFilter = document.getElementById("statusFilter");
+const incompleteOnly = document.getElementById("incompleteOnly");
 const openAnalyticsBtn = document.getElementById("openAnalytics");
+const villeDepartInput = document.getElementById("villeDepart");
+const destinationInput = document.getElementById("destination");
+const calcDistanceBtn = document.getElementById("calcDistance");
+// Column toggle controls
+const togglePerformance = document.getElementById("togglePerformance");
+const toggleDocs = document.getElementById("toggleDocs");
+const toggleIncidents = document.getElementById("toggleIncidents");
 // Auth/UI references
 const loginBtn = document.getElementById("loginBtn");
 const logoutBtn = document.getElementById("logoutBtn");
@@ -239,6 +249,25 @@ function initDates() {
     year: "numeric",
   });
   currentYearSpan.textContent = now.getFullYear();
+
+  // Restore persisted filters and toggles
+  try {
+    const saved = JSON.parse(localStorage.getItem("kis:filters") || "{}");
+    if (saved.filterSelect) filterSelect.value = saved.filterSelect;
+    if (saved.timeFilter) timeFilter.value = saved.timeFilter;
+    if (saved.companyFilter) companyFilter.value = saved.companyFilter;
+    if (saved.statusFilter) statusFilter.value = saved.statusFilter;
+    if (saved.incompleteOnly != null && incompleteOnly)
+      incompleteOnly.checked = !!saved.incompleteOnly;
+    if (saved.search) searchInput.value = saved.search;
+    if (saved.cols) {
+      if (togglePerformance)
+        togglePerformance.checked = saved.cols.performance !== false;
+      if (toggleDocs) toggleDocs.checked = saved.cols.docs !== false;
+      if (toggleIncidents)
+        toggleIncidents.checked = saved.cols.incidents !== false;
+    }
+  } catch {}
 }
 
 // ---------------- Authentication & Role-based UI -----------------
@@ -327,21 +356,23 @@ voyageForm.addEventListener("submit", async (e) => {
   e.preventDefault();
 
   const voyage = {
+    numeroOrdreTransport: document
+      .getElementById("numeroOrdreTransport")
+      .value.trim(),
     chauffeur: document.getElementById("chauffeur").value.trim(),
     camion: document.getElementById("camion").value.trim(),
     destination: document.getElementById("destination").value.trim(),
+    villeDepart: (villeDepartInput?.value || "").trim(),
     distance: parseFloat(document.getElementById("distance").value),
-    dateDepart: new Date(document.getElementById("dateDepart").value),
-    clientArrivalTime: new Date(
+    dateDepart: asDate(document.getElementById("dateDepart").value),
+    clientArrivalTime: asDate(
       document.getElementById("clientArrivalTime").value
     ),
-    clientDepartureTime: new Date(
+    clientDepartureTime: asDate(
       document.getElementById("clientDepartureTime").value
     ),
-    kribiArrivalDate: new Date(
-      document.getElementById("kribiArrivalDate").value
-    ),
-    containerPositioningDate: new Date(
+    kribiArrivalDate: asDate(document.getElementById("kribiArrivalDate").value),
+    containerPositioningDate: asDate(
       document.getElementById("containerPositioningDate").value
     ),
     containerPositioningLocation: document
@@ -358,6 +389,29 @@ voyageForm.addEventListener("submit", async (e) => {
     statut: document.getElementById("statut").value,
     societe: document.getElementById("company-selector").value,
   };
+
+  // Auto-status: if all end-of-journey timestamps are present, mark complete; otherwise, ensure not 'complet'
+  const endDatesPresent = !!(
+    voyage.clientArrivalTime &&
+    voyage.clientDepartureTime &&
+    voyage.kribiArrivalDate &&
+    voyage.containerPositioningDate
+  );
+  if (endDatesPresent) {
+    if (voyage.statut !== "complet") {
+      voyage.statut = "complet";
+      showNotification(
+        "Statut mis à 'Complet' — fin de voyage détectée",
+        "info"
+      );
+    }
+  } else if (voyage.statut === "complet") {
+    voyage.statut = "en-cours";
+    showNotification(
+      "Statut remis à 'En cours' — fin de voyage incomplète",
+      "warning"
+    );
+  }
 
   const errors = validateVoyage(voyage);
   if (errors.length) {
@@ -398,25 +452,102 @@ function asDate(val) {
     return null;
   }
 }
+// Progressive enhancement: auto distance via Nominatim + OSRM
+async function geocodeCity(name) {
+  const url = `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(
+    name
+  )}&limit=1`;
+  const res = await fetch(url, { headers: { Accept: "application/json" } });
+  if (!res.ok) throw new Error("Geocoding échec");
+  const data = await res.json();
+  if (!data?.length) throw new Error("Ville introuvable");
+  return { lat: parseFloat(data[0].lat), lon: parseFloat(data[0].lon) };
+}
+
+async function routeDistanceKm(from, to) {
+  const url = `https://router.project-osrm.org/route/v1/driving/${from.lon},${from.lat};${to.lon},${to.lat}?overview=false`;
+  const res = await fetch(url, { headers: { Accept: "application/json" } });
+  if (!res.ok) throw new Error("Itinéraire indisponible");
+  const data = await res.json();
+  const meters = data?.routes?.[0]?.distance;
+  if (!meters) throw new Error("Distance introuvable");
+  return Math.round(meters / 1000);
+}
+
+async function computeDistanceFromCities() {
+  const fromName = (villeDepartInput?.value || "").trim();
+  const toName = (destinationInput?.value || "").trim();
+  if (!fromName || !toName) {
+    showNotification(
+      "Entrez 'Ville de départ' et 'Destination' pour calculer la distance",
+      "warning"
+    );
+    return;
+  }
+
+  // Cache key normalized to lowercase and trimmed
+  const key = `${fromName.toLowerCase()}|${toName.toLowerCase()}`;
+  try {
+    const cached = localStorage.getItem(`route:${key}`);
+    if (cached) {
+      const km = parseFloat(cached);
+      if (!isNaN(km)) {
+        const distanceEl = document.getElementById("distance");
+        if (distanceEl) distanceEl.value = String(Math.round(km));
+        showNotification(
+          `Distance récupérée du cache: ${Math.round(km)} km`,
+          "info"
+        );
+        return;
+      }
+    }
+  } catch {}
+  try {
+    showLoader();
+    const from = await geocodeCity(fromName);
+    const to = await geocodeCity(toName);
+    const km = await routeDistanceKm(from, to);
+    const distanceEl = document.getElementById("distance");
+    if (distanceEl) distanceEl.value = String(km);
+    try {
+      localStorage.setItem(`route:${key}`, String(km));
+      // Also cache reverse for convenience
+      const rkey = `${toName.toLowerCase()}|${fromName.toLowerCase()}`;
+      localStorage.setItem(`route:${rkey}`, String(km));
+    } catch {}
+    showNotification(`Distance estimée: ${km} km`, "success");
+  } catch (e) {
+    showNotification(e?.message || "Échec du calcul de distance", "error");
+  } finally {
+    hideLoader();
+  }
+}
+
+if (calcDistanceBtn) {
+  calcDistanceBtn.addEventListener("click", computeDistanceFromCities);
+}
 
 function validateVoyage(v) {
   const errs = [];
   if (!v.chauffeur) errs.push("Nom du chauffeur requis");
   if (!v.camion) errs.push("Immatriculation requise");
-  if (isNaN(v.distance) || v.distance < 0) errs.push("Distance invalide");
-  if (isNaN(v.carburantDepart) || v.carburantDepart < 0)
+  if (!isNaN(v.distance) && v.distance < 0) errs.push("Distance invalide");
+  if (!isNaN(v.carburantDepart) && v.carburantDepart < 0)
     errs.push("Carburant départ invalide");
-  if (isNaN(v.carburantRetour) || v.carburantRetour < 0)
+  if (!isNaN(v.carburantRetour) && v.carburantRetour < 0)
     errs.push("Carburant retour invalide");
-  if (v.carburantRetour > v.carburantDepart)
+  if (
+    !isNaN(v.carburantRetour) &&
+    !isNaN(v.carburantDepart) &&
+    v.carburantRetour > v.carburantDepart
+  )
     errs.push("Carburant retour > départ");
   const d1 = asDate(v.dateDepart),
     d2 = asDate(v.clientArrivalTime),
     d3 = asDate(v.clientDepartureTime),
     d4 = asDate(v.kribiArrivalDate),
     d5 = asDate(v.containerPositioningDate);
-  if (!(d1 && d2 && d3 && d4 && d5))
-    errs.push("Toutes les dates sont requises");
+  // Dates can be filled later; only basic chronological checks if both present
   if (d1 && d2 && d1 > d2) errs.push("Arrivée client avant départ");
   if (d2 && d3 && d2 > d3) errs.push("Départ client avant arrivée");
   if (d3 && d4 && d3 > d4) errs.push("Arrivée Kribi avant départ client");
@@ -430,6 +561,16 @@ function validateVoyage(v) {
 // Rendu du tableau (version corrigée avec délégation d'événements)
 function renderTable(data) {
   voyagesTable.innerHTML = "";
+
+  const escapeHTML = (s) => {
+    if (s == null) return "";
+    return String(s)
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;")
+      .replace(/"/g, "&quot;")
+      .replace(/'/g, "&#039;");
+  };
 
   data.forEach((voyage) => {
     const row = document.createElement("tr");
@@ -457,17 +598,18 @@ function renderTable(data) {
     };
 
     row.innerHTML = `
-            <td>${voyage.chauffeur || ""}</td>
-            <td>${voyage.camion || ""}</td>
-            <td>${voyage.societe || "KIS"}</td>
-      <td>${voyage.destination || ""}</td>
+      <td>${escapeHTML(voyage.chauffeur || "")}</td>
+      <td>${escapeHTML(voyage.camion || "")}</td>
+  <td>${escapeHTML(voyage.numeroOrdreTransport || "")}</td>
+      <td>${escapeHTML(voyage.societe || "KIS")}</td>
+    <td>${escapeHTML(voyage.destination || "")}</td>
             <td>${formatDate(voyage.dateDepart)}</td>
             <td>${formatDate(voyage.clientArrivalTime)}</td>
             <td>${formatDate(voyage.clientDepartureTime)}</td>
             <td>${formatDate(voyage.kribiArrivalDate)}</td>
             <td>
                 ${formatDate(voyage.containerPositioningDate)}<br>
-                ${voyage.containerPositioningLocation}
+        ${escapeHTML(voyage.containerPositioningLocation)}
             </td>
             <td>${voyage.distance ?? 0} km</td>
             <td>${voyage.carburantDepart ?? 0} L</td>
@@ -475,9 +617,11 @@ function renderTable(data) {
             <td class="${getPerformanceClass(efficiency)}">
                 ${getPerformanceIcon(efficiency)} ${efficiency} km/L
             </td>
-            <td>${voyage.documentation || ""}</td>
-            <td>${voyage.incidents || "Aucun"}</td>
-            <td>${getStatusBadge(voyage.statut)}</td>
+      <td>${escapeHTML(voyage.documentation || "")}</td>
+      <td>${escapeHTML(voyage.incidents || "Aucun")}</td>
+            <td>${getStatusBadge(voyage.statut)} ${getIncompleteBadge(
+      voyage
+    )}</td>
             <td>
                 <button class="btn-edit" data-id="${voyage.id}">
                     <i class="fas fa-edit"></i> Modifier
@@ -498,6 +642,22 @@ function renderTable(data) {
   // Ensure the table scroll starts at the left edge after render
   const container = document.querySelector(".table-container");
   if (container) container.scrollLeft = 0;
+
+  // Apply column visibility based on toggles (1-based indexes)
+  const table = document.getElementById("voyagesTable");
+  if (table) {
+    const showPerf = togglePerformance?.checked !== false;
+    const showDocs = toggleDocs?.checked !== false;
+    const showInc = toggleIncidents?.checked !== false;
+    const hideShow = (i, show) => {
+      table
+        .querySelectorAll(`thead th:nth-child(${i}), tbody td:nth-child(${i})`)
+        .forEach((cell) => (cell.style.display = show ? "" : "none"));
+    };
+    hideShow(14, showPerf);
+    hideShow(15, showDocs);
+    hideShow(16, showInc);
+  }
 }
 
 // Fonction pour les badges de statut
@@ -532,6 +692,18 @@ function getPerformanceIcon(efficiency) {
   if (eff > 5) return '<i class="fas fa-check-circle"></i>';
   if (eff > 3) return '<i class="fas fa-exclamation-circle"></i>';
   return '<i class="fas fa-times-circle"></i>';
+}
+
+function getIncompleteBadge(v) {
+  const d2 = asDate(v.clientArrivalTime);
+  const d3 = asDate(v.clientDepartureTime);
+  const d4 = asDate(v.kribiArrivalDate);
+  const d5 = asDate(v.containerPositioningDate);
+  const missingEndData = !(d2 && d3 && d4 && d5);
+  if (missingEndData && v.statut !== "annule") {
+    return '<span class="status-badge warning" style="margin-left:6px">Incomplet</span>';
+  }
+  return "";
 }
 
 // Calcul des statistiques
@@ -598,22 +770,71 @@ function calculateDurationHours(start, end) {
   return (endDate - startDate) / (1000 * 60 * 60);
 }
 
-// Recherche
+// Recherche (debounced)
+let __searchDebounce;
 searchInput.addEventListener("input", () => {
-  const searchTerm = searchInput.value.toLowerCase();
-
-  if (!searchTerm) {
-    renderTable(allVoyages);
-    return;
-  }
-
-  applyFilters();
+  if (__searchDebounce) clearTimeout(__searchDebounce);
+  __searchDebounce = setTimeout(() => {
+    applyFilters();
+    persistFilters();
+  }, 200);
 });
 
 // Filtrage par temps
-timeFilter.addEventListener("change", applyFilters);
-companyFilter.addEventListener("change", applyFilters);
-statusFilter.addEventListener("change", applyFilters);
+function persistFilters() {
+  try {
+    localStorage.setItem(
+      "kis:filters",
+      JSON.stringify({
+        filterSelect: filterSelect.value,
+        timeFilter: timeFilter.value,
+        companyFilter: companyFilter.value,
+        statusFilter: statusFilter.value,
+        incompleteOnly: !!incompleteOnly?.checked,
+        search: searchInput.value,
+        cols: {
+          performance: togglePerformance?.checked,
+          docs: toggleDocs?.checked,
+          incidents: toggleIncidents?.checked,
+        },
+      })
+    );
+  } catch {}
+}
+
+timeFilter.addEventListener("change", () => {
+  applyFilters();
+  persistFilters();
+});
+companyFilter.addEventListener("change", () => {
+  applyFilters();
+  persistFilters();
+});
+statusFilter.addEventListener("change", () => {
+  applyFilters();
+  persistFilters();
+});
+if (incompleteOnly)
+  incompleteOnly.addEventListener("change", () => {
+    applyFilters();
+    persistFilters();
+  });
+// Column toggles
+if (togglePerformance)
+  togglePerformance.addEventListener("change", () => {
+    applyFilters();
+    persistFilters();
+  });
+if (toggleDocs)
+  toggleDocs.addEventListener("change", () => {
+    applyFilters();
+    persistFilters();
+  });
+if (toggleIncidents)
+  toggleIncidents.addEventListener("change", () => {
+    applyFilters();
+    persistFilters();
+  });
 
 function applyFilters() {
   const now = new Date();
@@ -651,7 +872,16 @@ function applyFilters() {
       timeOk = d ? d >= monthStart : false;
     }
 
-    return matchesSearch && companyOk && statusOk && timeOk;
+    // Incomplete-only logic: end-of-journey fields missing
+    const d2 = asDate(v.clientArrivalTime);
+    const d3 = asDate(v.clientDepartureTime);
+    const d4 = asDate(v.kribiArrivalDate);
+    const d5 = asDate(v.containerPositioningDate);
+    const missingEndData = !(d2 && d3 && d4 && d5);
+
+    const incompleteOk = !incompleteOnly?.checked || missingEndData;
+
+    return matchesSearch && companyOk && statusOk && timeOk && incompleteOk;
   });
 
   renderTable(filtered);
@@ -722,6 +952,9 @@ async function editVoyage(id) {
       document.getElementById("chauffeur").value = data.chauffeur;
       document.getElementById("camion").value = data.camion;
       document.getElementById("destination").value = data.destination;
+      if (villeDepartInput) {
+        villeDepartInput.value = data.villeDepart || "Kribi";
+      }
       document.getElementById("distance").value = data.distance || "";
       document.getElementById("dateDepart").value = formatDateForInput(
         data.dateDepart
@@ -783,39 +1016,78 @@ async function deleteVoyage(id) {
 }
 
 // Export Excel
+async function loadXLSX() {
+  if (window.XLSX) return window.XLSX;
+  await import(
+    "https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"
+  );
+  return window.XLSX;
+}
+
 exportExcelBtn.addEventListener("click", async () => {
   try {
+    const XLSX = await loadXLSX();
     const snapshot = await voyagesCollection.get();
-    const data = snapshot.docs.map((doc) => {
+    const rows = snapshot.docs.map((doc) => {
       const v = doc.data();
       const fuelUsed = (v.carburantDepart ?? 0) - (v.carburantRetour ?? 0);
       const efficiency =
         fuelUsed > 0 && v.distance > 0
           ? (v.distance / fuelUsed).toFixed(2)
           : "N/A";
-
-      return {
-        Chauffeur: v.chauffeur || "",
-        Camion: v.camion || "",
-        Société: v.societe || "KIS",
-        "Date départ": formatDateForPDF(v.dateDepart),
-        "Heure arrivée client": formatDateForPDF(v.clientArrivalTime),
-        "Heure départ client": formatDateForPDF(v.clientDepartureTime),
-        "Arrivée Kribi": formatDateForPDF(v.kribiArrivalDate),
-        Positionnement: `${formatDateForPDF(v.containerPositioningDate)} à ${
+      return [
+        v.numeroOrdreTransport || "",
+        v.chauffeur || "",
+        v.camion || "",
+        v.societe || "KIS",
+        v.villeDepart || "",
+        v.destination || "",
+        formatDateForPDF(v.dateDepart),
+        formatDateForPDF(v.clientArrivalTime),
+        formatDateForPDF(v.clientDepartureTime),
+        formatDateForPDF(v.kribiArrivalDate),
+        `${formatDateForPDF(v.containerPositioningDate)} à ${
           v.containerPositioningLocation || ""
         }`,
-        "Distance (km)": v.distance || 0,
-        "Carburant départ (L)": v.carburantDepart ?? 0,
-        "Carburant retour (L)": v.carburantRetour ?? 0,
-        "Efficacité (km/L)": efficiency,
-        Documentation: v.documentation || "",
-        Incidents: v.incidents || "",
-        Statut: v.statut || "complet",
-      };
+        Number(v.distance || 0),
+        Number(v.carburantDepart ?? 0),
+        Number(v.carburantRetour ?? 0),
+        efficiency,
+        v.documentation || "",
+        v.incidents || "",
+        v.statut || "complet",
+      ];
     });
 
-    const ws = XLSX.utils.json_to_sheet(data);
+    const header = [
+      [
+        "N° ordre",
+        "Chauffeur",
+        "Camion",
+        "Société",
+        "Ville de départ",
+        "Destination",
+        "Date départ",
+        "Heure arrivée client",
+        "Heure départ client",
+        "Arrivée Kribi",
+        "Positionnement",
+        "Distance",
+        "Carburant départ (L)",
+        "Carburant retour (L)",
+        "Efficacité (km/L)",
+        "Documentation",
+        "Incidents",
+        "Statut",
+      ],
+    ];
+    const context = [
+      [`Période: ${periodText()}`],
+      [`Généré le: ${new Date().toLocaleString("fr-FR")}`],
+      [],
+    ];
+    const aoa = [...context, ...header, ...rows];
+    const ws = XLSX.utils.aoa_to_sheet(aoa);
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, ws, "Voyages KIS/UTA");
     XLSX.writeFile(wb, "rapport_voyages_kis_uta.xlsx");
@@ -1000,9 +1272,20 @@ function addFooter(doc) {
 }
 
 // Export PDF (professional multi-section report)
+async function loadJsPDF() {
+  if (window.jspdf && window.jspdf.jsPDF) return window.jspdf;
+  await import(
+    "https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"
+  );
+  await import(
+    "https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.25/jspdf.plugin.autotable.min.js"
+  );
+  return window.jspdf;
+}
+
 exportPDFBtn.addEventListener("click", async () => {
   try {
-    const { jsPDF } = window.jspdf;
+    const { jsPDF } = await loadJsPDF();
     const doc = new jsPDF("p", "mm", "a4");
     const width = doc.internal.pageSize.getWidth();
     const height = doc.internal.pageSize.getHeight();
@@ -1223,6 +1506,19 @@ exportPDFBtn.addEventListener("click", async () => {
       chipX += w + chipGap;
     });
 
+    // Watermark if filters/search active
+    const filtersActive =
+      timeFilter?.value !== "all" ||
+      statusFilter?.value !== "all" ||
+      companyFilter?.value !== "all" ||
+      (searchInput?.value || "").trim() !== "";
+    if (filtersActive) {
+      doc.setTextColor(230);
+      doc.setFontSize(42);
+      doc.text("FILTRÉ", width / 2, height / 2, { angle: 45, align: "center" });
+      doc.setTextColor(20);
+    }
+
     // 2) Per-company tables
     const grouped = groupByCompany(voyages);
     const companies = Object.keys(grouped);
@@ -1249,6 +1545,8 @@ exportPDFBtn.addEventListener("click", async () => {
           formatDateForPDF(v.dateDepart),
           v.chauffeur || "",
           v.camion || "",
+          v.numeroOrdreTransport || "",
+          v.villeDepart || "",
           v.destination || "",
           v.distance || 0,
           fu > 0 ? fu.toFixed(1) : 0,
@@ -1264,8 +1562,10 @@ exportPDFBtn.addEventListener("click", async () => {
             "Départ",
             "Chauffeur",
             "Camion",
+            "N° ordre",
+            "Ville départ",
             "Destination",
-            "Distance (km)",
+            "Distance",
             "Carburant (L)",
             "Efficacité (km/L)",
             "Statut",
@@ -1287,14 +1587,16 @@ exportPDFBtn.addEventListener("click", async () => {
           lineWidth: 0.1,
         },
         columnStyles: {
-          0: { cellWidth: 26 }, // Départ
-          1: { cellWidth: 24 }, // Chauffeur
-          2: { cellWidth: 20 }, // Camion
-          3: { cellWidth: 32 }, // Destination
-          4: { cellWidth: 18, halign: "right" }, // Distance
-          5: { cellWidth: 20, halign: "right" }, // Carburant
-          6: { cellWidth: 22, halign: "right" }, // Efficacité
-          7: { cellWidth: 16, halign: "center" }, // Statut
+          0: { cellWidth: 24 }, // Départ
+          1: { cellWidth: 22 }, // Chauffeur
+          2: { cellWidth: 18 }, // Camion
+          3: { cellWidth: 18 }, // N° ordre
+          4: { cellWidth: 22 }, // Ville départ
+          5: { cellWidth: 26 }, // Destination
+          6: { cellWidth: 16, halign: "right" }, // Distance
+          7: { cellWidth: 18, halign: "right" }, // Carburant
+          8: { cellWidth: 20, halign: "right" }, // Efficacité
+          9: { cellWidth: 16, halign: "center" }, // Statut
         },
         // Center the table horizontally and keep within margins
         halign: "center",
@@ -1302,7 +1604,7 @@ exportPDFBtn.addEventListener("click", async () => {
         margin: { left: margin, right: margin, top: 24 },
         willDrawCell: (data) => {
           // Color status chips
-          if (data.section === "body" && data.column.index === 7) {
+          if (data.section === "body" && data.column.index === 8) {
             const s = String(data.cell.raw);
             let bg = [230, 230, 230];
             if (s === "complet") bg = [40, 167, 69];
@@ -1328,11 +1630,42 @@ exportPDFBtn.addEventListener("click", async () => {
       doc.setTextColor(primary[0], primary[1], primary[2]);
       doc.setFontSize(14);
       doc.text("Annexes — Détails & Incidents", margin, 20);
+      // Quick table for Villes to fit on page width
+      try {
+        const annexRows = voyages.map((v, i) => [
+          i + 1,
+          v.villeDepart || "",
+          v.destination || "",
+          v.distance || 0,
+        ]);
+        doc.autoTable({
+          startY: 26,
+          head: [["#", "Ville départ", "Destination", "Distance"]],
+          body: annexRows,
+          theme: "grid",
+          headStyles: {
+            fillColor: [230, 230, 230],
+            fontStyle: "bold",
+            fontSize: 8,
+            cellPadding: 1.5,
+          },
+          styles: { fontSize: 7.5, cellPadding: 1.5, overflow: "linebreak" },
+          columnStyles: {
+            0: { cellWidth: 8, halign: "center" },
+            1: { cellWidth: 40 },
+            2: { cellWidth: 60 },
+            3: { cellWidth: 16, halign: "right" },
+          },
+          halign: "center",
+          tableWidth: "wrap",
+          margin: { left: margin, right: margin },
+        });
+      } catch {}
       doc.setFont("helvetica", "normal");
       doc.setTextColor(30);
       doc.setFontSize(10);
 
-      let y = 28;
+      let y = doc.lastAutoTable ? doc.lastAutoTable.finalY + 6 : 28;
       voyages.forEach((v, i) => {
         const header = `${i + 1}. ${v.chauffeur || ""} — ${v.camion || ""} (${
           v.destination || ""
@@ -1400,6 +1733,27 @@ exportPDFBtn.addEventListener("click", async () => {
         doc.line(margin, y, width - margin, y);
         y += 6;
       });
+    }
+
+    // Signature blocks page
+    if (voyages.length) {
+      doc.addPage();
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(12);
+      doc.text("Signatures", margin, 24);
+      doc.setFont("helvetica", "normal");
+      doc.setFontSize(10);
+      const sy = 40;
+      doc.text("Préparé par:", margin, sy);
+      doc.text("Approuvé par:", width / 2 + 10, sy);
+      doc.setDrawColor(170);
+      doc.line(margin, sy + 18, width / 2 - 20, sy + 18);
+      doc.line(width / 2 + 10, sy + 18, width - margin, sy + 18);
+      doc.text(
+        `Date: ${new Date().toLocaleDateString("fr-FR")}`,
+        margin,
+        sy + 26
+      );
     }
 
     // Footer on all pages

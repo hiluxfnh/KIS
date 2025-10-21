@@ -131,6 +131,16 @@
           <form id="voyageForm">
             <div class="form-grid">
               <div class="form-group">
+                <label for="numeroOrdreTransport">
+                  <i class="fas fa-hashtag"></i> N° d'ordre de transport
+                </label>
+                <input
+                  type="text"
+                  id="numeroOrdreTransport"
+                  placeholder="Ex: OT-2025-001"
+                />
+              </div>
+              <div class="form-group">
                 <label for="chauffeur"
                   ><i class="fas fa-user"></i> Nom du chauffeur</label
                 >
@@ -148,21 +158,51 @@
                 <label for="destination"
                   ><i class="fas fa-map-marker-alt"></i> Destination</label
                 >
-                <input type="text" id="destination" required />
+                <input type="text" id="destination" />
               </div>
 
               <div class="form-group">
-                <label for="distance"
-                  ><i class="fas fa-road"></i> Distance (km)</label
+                <label for="villeDepart">
+                  <i class="fas fa-location-arrow"></i> Ville de départ
+                </label>
+                <input
+                  type="text"
+                  id="villeDepart"
+                  placeholder="Ex: Kribi"
+                  value="Kribi"
+                />
+              </div>
+
+              <div class="form-group">
+                <label for="distance">
+                  <i class="fas fa-road"></i> Distance
+                </label>
+                <div style="display: flex; gap: 8px; align-items: center">
+                  <input
+                    type="number"
+                    id="distance"
+                    placeholder="km (auto si 'Ville de départ' et 'Destination')"
+                  />
+                  <button
+                    type="button"
+                    id="calcDistance"
+                    class="btn-export"
+                    title="Calculer avec les villes"
+                  >
+                    <i class="fas fa-route"></i> Calculer
+                  </button>
+                </div>
+                <small class="form-hint"
+                  >Entrez les villes puis cliquez sur Calculer, ou saisissez la
+                  distance manuellement.</small
                 >
-                <input type="number" id="distance" required />
               </div>
 
               <div class="form-group">
                 <label for="dateDepart"
                   ><i class="fas fa-calendar-alt"></i> Date départ</label
                 >
-                <input type="datetime-local" id="dateDepart" required />
+                <input type="datetime-local" id="dateDepart" />
               </div>
 
               <div class="form-group">
@@ -170,18 +210,20 @@
                   ><i class="fas fa-clock"></i> Heure d'arrivée chez le
                   client</label
                 >
-                <input type="datetime-local" id="clientArrivalTime" required />
+                <input type="datetime-local" id="clientArrivalTime" />
+                <small class="form-hint"
+                  >Peut être complété à la fin du voyage.</small
+                >
               </div>
               <div class="form-group">
                 <label for="clientDepartureTime"
                   ><i class="fas fa-clock"></i> Heure de départ de chez le
                   client</label
                 >
-                <input
-                  type="datetime-local"
-                  id="clientDepartureTime"
-                  required
-                />
+                <input type="datetime-local" id="clientDepartureTime" />
+                <small class="form-hint"
+                  >Peut être complété à la fin du voyage.</small
+                >
               </div>
 
               <div class="form-group">
@@ -189,24 +231,29 @@
                   ><i class="fas fa-map-marker-alt"></i> Date d'arrivée à
                   Kribi</label
                 >
-                <input type="datetime-local" id="kribiArrivalDate" required />
+                <input type="datetime-local" id="kribiArrivalDate" />
+                <small class="form-hint"
+                  >Peut être complété à la fin du voyage.</small
+                >
               </div>
               <div class="form-group">
                 <label for="containerPositioningDate"
                   ><i class="fas fa-calendar"></i> Date de positionnement</label
                 >
-                <input
-                  type="datetime-local"
-                  id="containerPositioningDate"
-                  required
-                />
+                <input type="datetime-local" id="containerPositioningDate" />
+                <small class="form-hint"
+                  >Peut être complété à la fin du voyage.</small
+                >
               </div>
 
               <div class="form-group">
                 <label for="containerPositioningLocation"
                   ><i class="fas fa-map-pin"></i> Lieu de positionnement</label
                 >
-                <input type="text" id="containerPositioningLocation" required />
+                <input type="text" id="containerPositioningLocation" />
+                <small class="form-hint"
+                  >Peut être complété à la fin du voyage.</small
+                >
               </div>
 
               <div class="form-group full-width">
@@ -229,14 +276,14 @@
                 <label for="carburantDepart"
                   ><i class="fas fa-gas-pump"></i> Carburant départ (L)</label
                 >
-                <input type="number" id="carburantDepart" step="0.1" required />
+                <input type="number" id="carburantDepart" step="0.1" />
               </div>
 
               <div class="form-group">
                 <label for="carburantRetour"
                   ><i class="fas fa-gas-pump"></i> Carburant retour (L)</label
                 >
-                <input type="number" id="carburantRetour" step="0.1" required />
+                <input type="number" id="carburantRetour" step="0.1" />
               </div>
 
               <div class="form-group">
@@ -244,8 +291,8 @@
                   ><i class="fas fa-check-circle"></i> Statut</label
                 >
                 <select id="statut">
+                  <option value="en-cours" selected>En cours</option>
                   <option value="complet">Complet</option>
-                  <option value="en-cours">En cours</option>
                   <option value="retard">Retard</option>
                   <option value="annule">Annulé</option>
                 </select>
@@ -296,6 +343,38 @@
               <option value="retard">Retard</option>
               <option value="annule">Annulé</option>
             </select>
+
+            <label
+              class="incomplete-filter"
+              title="Afficher uniquement les voyages incomplets"
+              style="display: flex; align-items: center; gap: 6px"
+            >
+              <input type="checkbox" id="incompleteOnly" /> Incomplets
+              uniquement
+            </label>
+
+            <!-- Column visibility toggles -->
+            <div
+              class="column-toggles"
+              title="Afficher/Masquer des colonnes"
+              style="
+                display: flex;
+                align-items: center;
+                gap: 10px;
+                margin-left: 10px;
+              "
+            >
+              <label style="display: flex; align-items: center; gap: 6px">
+                <input type="checkbox" id="togglePerformance" checked />
+                Performance
+              </label>
+              <label style="display: flex; align-items: center; gap: 6px">
+                <input type="checkbox" id="toggleDocs" checked /> Documentation
+              </label>
+              <label style="display: flex; align-items: center; gap: 6px">
+                <input type="checkbox" id="toggleIncidents" checked /> Incidents
+              </label>
+            </div>
           </div>
         </div>
 
@@ -332,6 +411,7 @@
                   <i class="fas fa-user"></i> Chauffeur
                 </th>
                 <th data-sort="camion"><i class="fas fa-truck"></i> Camion</th>
+                <th><i class="fas fa-hashtag"></i> N° ordre transport</th>
                 <th data-sort="societe">
                   <i class="fas fa-building"></i> Société
                 </th>
@@ -398,10 +478,7 @@
     <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-firestore-compat.js"></script>
 
-    <!-- Bibliothèques externes -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.25/jspdf.plugin.autotable.min.js"></script>
+    <!-- Bibliothèques externes seront chargées à la demande (lazy-load) -->
 
     <!-- Script principal -->
     <script src="script.js"></script>
