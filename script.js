@@ -186,6 +186,7 @@ const societeSelect = document.getElementById("societe");
 const statusFilter = document.getElementById("statusFilter");
 const incompleteOnly = document.getElementById("incompleteOnly");
 const openAnalyticsBtn = document.getElementById("openAnalytics");
+const openPreAlertesBtn = document.getElementById("openPreAlertes");
 const villeDepartInput = document.getElementById("villeDepart");
 const destinationInput = document.getElementById("destination");
 const destinationDetailInput = document.getElementById("destinationDetail");
@@ -645,7 +646,7 @@ function validateVoyage(v) {
   if (d1 && d2 && d1 > d2) errs.push("Arrivée client avant départ");
   if (d2 && d3 && d2 > d3) errs.push("Départ client avant arrivée");
   if (d3 && d4 && d3 > d4) errs.push("Arrivée Kribi avant départ client");
-  if (d4 && d5 && d4 > d5) errs.push("Positionnement avant arrivée à Kribi");
+  if (d4 && d5 && d4 > d5) errs.push("Positionnement du TC vide avant arrivée à Kribi");
   return errs;
 }
 
@@ -1241,7 +1242,7 @@ exportExcelBtn.addEventListener("click", async () => {
         "Heure arrivée client",
         "Heure départ client",
         "Arrivée Kribi",
-        "Positionnement",
+  "Positionnement du TC vide",
         "Distance",
         "Carburant départ (L)",
         "Efficacité (km/L)",
@@ -1934,7 +1935,7 @@ exportPDFBtn.addEventListener("click", async () => {
             v.clientDepartureTime
           )} • Arrivée Kribi ${formatDateForPDF(
             v.kribiArrivalDate
-          )} • Positionnement ${formatDateForPDF(
+          )} • Positionnement du TC vide ${formatDateForPDF(
             v.containerPositioningDate
           )} à ${v.containerPositioningLocation || ""}`,
           width - margin * 2
@@ -2130,6 +2131,17 @@ if (openAnalyticsBtn) {
   openAnalyticsBtn.addEventListener("click", () => {
     try {
       window.location.href = "analytics.html";
+    } catch {
+      /* ignore */
+    }
+  });
+}
+
+// Open pre-alertes tracking page
+if (openPreAlertesBtn) {
+  openPreAlertesBtn.addEventListener("click", () => {
+    try {
+      window.location.href = "pre-alertes.html";
     } catch {
       /* ignore */
     }

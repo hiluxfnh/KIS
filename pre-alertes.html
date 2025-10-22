@@ -1,0 +1,275 @@
+<!DOCTYPE html>
+<html lang="fr">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Pré-alertes - Tableau de suivi</title>
+    <link rel="stylesheet" href="style.css" />
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"
+    />
+  </head>
+  <body>
+    <header>
+      <div class="header-container">
+        <div class="logo-header">
+          <div class="dual-logo">
+            <div class="logo-box">
+              <img src="img/logo.jpg" alt="Logo KIS" class="logo" />
+            </div>
+            <div class="logo-box">
+              <img src="img/uta-logo.jpg" alt="Logo UTA" class="logo" />
+            </div>
+          </div>
+          <div>
+            <h1>Pré-alertes — Tableau de suivi</h1>
+            <h3>Réception, documents, retrait port, livraison</h3>
+          </div>
+        </div>
+        <div>
+          <a class="btn-export" href="index.html"
+            ><i class="fas fa-arrow-left"></i> Retour</a
+          >
+        </div>
+      </div>
+    </header>
+
+    <main class="container">
+      <section class="form-section">
+        <div class="form-section-header">
+          <h2><i class="fas fa-plus-circle"></i> Enregistrer une pré-alerte</h2>
+          <button
+            id="togglePreForm"
+            class="btn-toggle"
+            aria-expanded="true"
+            aria-controls="preFormWrap"
+          >
+            <i class="fas fa-chevron-down" aria-hidden="true"></i>
+          </button>
+        </div>
+        <div id="preFormWrap" class="collapse" aria-hidden="false">
+          <form id="preForm">
+            <div class="form-grid">
+              <div class="form-group">
+                <label for="preSociete"
+                  ><i class="fas fa-building"></i> Société</label
+                >
+                <select id="preSociete">
+                  <option value="KIS">KIS</option>
+                  <option value="UTA">UTA</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <label for="preClient"
+                  ><i class="fas fa-user-tie"></i> Client</label
+                >
+                <input
+                  type="text"
+                  id="preClient"
+                  placeholder="Ex: Maersk"
+                  required
+                  list="preClientList"
+                />
+                <datalist id="preClientList"></datalist>
+              </div>
+              <div class="form-group">
+                <label for="preReference"
+                  ><i class="fas fa-hashtag"></i> Référence / Booking /
+                  BL</label
+                >
+                <input
+                  type="text"
+                  id="preReference"
+                  placeholder="Ref/Booking/BL"
+                />
+              </div>
+              <div class="form-group">
+                <label for="preContainer"
+                  ><i class="fas fa-box"></i> N° Conteneur</label
+                >
+                <input type="text" id="preContainer" />
+              </div>
+              <div class="form-group">
+                <label for="preReceived"
+                  ><i class="fas fa-envelope-open-text"></i> Date réception
+                  pré-alerte</label
+                >
+                <input type="date" id="preReceived" required />
+              </div>
+              <div class="form-group">
+                <label for="preDocs"
+                  ><i class="fas fa-file-signature"></i> Date réception
+                  documents transport</label
+                >
+                <div style="display: flex; gap: 8px; align-items: center">
+                  <input type="date" id="preDocs" />
+                  <button
+                    type="button"
+                    id="markDocsReceived"
+                    class="btn-export"
+                    style="padding: 6px 10px"
+                  >
+                    <i class="fas fa-check"></i> Docs reçues aujourd'hui
+                  </button>
+                </div>
+              </div>
+              <div class="form-group">
+                <label for="preTake"
+                  ><i class="fas fa-warehouse"></i> Date retrait conteneur au
+                  port</label
+                >
+                <input type="date" id="preTake" />
+              </div>
+              <div class="form-group">
+                <label for="preDelivery"
+                  ><i class="fas fa-truck-ramp-box"></i> Date livraison</label
+                >
+                <div style="display: flex; gap: 8px; align-items: center">
+                  <input type="date" id="preDelivery" />
+                  <button
+                    type="button"
+                    id="markDeliveredToday"
+                    class="btn-export"
+                    style="padding: 6px 10px"
+                  >
+                    <i class="fas fa-flag-checkered"></i> Livré aujourd'hui
+                  </button>
+                </div>
+              </div>
+              <div class="form-group">
+                <label for="preStatus"
+                  ><i class="fas fa-flag"></i> Statut</label
+                >
+                <select id="preStatus">
+                  <option value="transmis" selected>Transmis</option>
+                  <option value="docs-attente">Docs en attente</option>
+                  <option value="docs-recues">Docs reçues</option>
+                  <option value="a-retirer">A retirer au port</option>
+                  <option value="en-livraison">En livraison</option>
+                  <option value="livre">Livré</option>
+                  <option value="annule">Annulé</option>
+                </select>
+              </div>
+              <div class="form-group full-width">
+                <label for="preComments"
+                  ><i class="fas fa-sticky-note"></i> Commentaires</label
+                >
+                <textarea id="preComments" rows="2"></textarea>
+              </div>
+            </div>
+            <button type="submit" class="btn-submit">
+              <i class="fas fa-save"></i> Enregistrer
+            </button>
+          </form>
+        </div>
+      </section>
+
+      <section class="controls-section">
+        <div class="search-filter">
+          <div class="search-box">
+            <i class="fas fa-search"></i>
+            <input
+              type="text"
+              id="preSearch"
+              placeholder="Rechercher (client, ref, conteneur, commentaires)"
+            />
+          </div>
+          <div class="filters" id="preFilters">
+            <select id="preTime">
+              <option value="all">Toutes dates</option>
+              <option value="today">Aujourd'hui</option>
+              <option value="week">Cette semaine</option>
+              <option value="month" selected>Ce mois</option>
+            </select>
+            <select id="preCompany">
+              <option value="all">Toutes sociétés</option>
+              <option value="KIS">KIS</option>
+              <option value="UTA">UTA</option>
+            </select>
+            <select id="preStatusFilter">
+              <option value="all">Tous statuts</option>
+              <option value="transmis">Transmis</option>
+              <option value="docs-attente">Docs en attente</option>
+              <option value="docs-recues">Docs reçues</option>
+              <option value="a-retirer">A retirer</option>
+              <option value="en-livraison">En livraison</option>
+              <option value="livre">Livré</option>
+              <option value="annule">Annulé</option>
+            </select>
+          </div>
+        </div>
+        <div class="export-buttons">
+          <button id="preExportExcel" class="btn-export">
+            <i class="fas fa-file-excel"></i> Export Excel
+          </button>
+          <button id="preExportPDF" class="btn-export">
+            <i class="fas fa-file-pdf"></i> Export PDF
+          </button>
+          <a href="index.html" class="btn-export"
+            ><i class="fas fa-arrow-left"></i> Retour</a
+          >
+        </div>
+      </section>
+
+      <section class="table-section">
+        <div class="table-header">
+          <h2><i class="fas fa-table"></i> Suivi des pré-alertes</h2>
+          <div class="summary">
+            <span id="preCount">0 éléments</span>
+            <span id="preSummary">—</span>
+          </div>
+        </div>
+        <div class="table-container">
+          <table id="preTable">
+            <thead>
+              <tr>
+                <th>Client</th>
+                <th>Société</th>
+                <th>Réf/BL</th>
+                <th>N° Conteneur</th>
+                <th>Réception pré-alerte</th>
+                <th>Docs reçues</th>
+                <th>Délai docs (jours)</th>
+                <th>Retrait port</th>
+                <th>Livraison</th>
+                <th>Statut</th>
+                <th>Commentaires</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody></tbody>
+          </table>
+        </div>
+      </section>
+    </main>
+
+    <footer>
+      <div class="footer-container">
+        <div class="footer-logo">
+          <div class="dual-logo-small">
+            <img src="img/logo.jpg" alt="Logo KIS" class="logo-small" />
+            <img src="img/uta-logo.jpg" alt="Logo UTA" class="logo-small" />
+          </div>
+          <div>
+            <h3>Kribi Inland Services & UTA Cameroun SA</h3>
+            <p>Services de transport et logistique</p>
+          </div>
+        </div>
+        <div class="footer-contact">
+          <p><i class="fas fa-map-marker-alt"></i> Kribi, Cameroun</p>
+          <p><i class="fas fa-phone"></i> 657 60 08 55 / 681 23 33 07</p>
+          <p><i class="fas fa-envelope"></i> alain.tchio@kis-kribi.org</p>
+        </div>
+        <div class="footer-info">
+          <p>Responsable: TCHIO NGOUMO ALAIN</p>
+          <p>Fonction: Agent Logistique</p>
+        </div>
+      </div>
+    </footer>
+
+    <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-firestore-compat.js"></script>
+    <script src="pre-alertes.js"></script>
+  </body>
+</html>

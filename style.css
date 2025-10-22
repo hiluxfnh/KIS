@@ -913,6 +913,15 @@ footer {
     background-color: #6c757d;
     color: white;
 }
+/* additional badge variants used in pre-alertes */
+.status-badge.info {
+    background-color: #17a2b8;
+    color: white;
+}
+.status-badge.primary {
+    background-color: var(--secondary);
+    color: white;
+}
 
 /* ------------------ Loader Overlay ------------------ */
 .loader-overlay {
