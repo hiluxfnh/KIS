@@ -84,19 +84,39 @@ function showNotification(message, type = "info") {
   }
 }
 
-// Gestion de la modal pour modifier les camions actifs
-const editTrucksBtn = document.getElementById("edit-trucks");
+// Gestion de la modal pour modifier les camions actifs (séparés par société)
+const editTrucksBtnKIS = document.getElementById("edit-trucks-kis");
+const editTrucksBtnUTA = document.getElementById("edit-trucks-uta");
 const modal = document.getElementById("edit-modal");
 const closeBtn = document.querySelector(".close");
 const saveTrucksBtn = document.getElementById("save-trucks");
 const trucksInput = document.getElementById("trucks-input");
-const activeTrucksSpan = document.getElementById("active-trucks");
+const activeTrucksSpanKIS = document.getElementById("active-trucks-kis");
+const activeTrucksSpanUTA = document.getElementById("active-trucks-uta");
+const editTrucksTitle = document.getElementById("edit-trucks-title");
+let currentTrucksCompany = null; // 'KIS' | 'UTA'
 
 // Ouvrir la modal
-editTrucksBtn.addEventListener("click", () => {
-  trucksInput.value = activeTrucksSpan.textContent;
-  modal.style.display = "block";
-});
+if (editTrucksBtnKIS) {
+  editTrucksBtnKIS.addEventListener("click", () => {
+    currentTrucksCompany = "KIS";
+    trucksInput.value = (activeTrucksSpanKIS?.textContent || "0").trim();
+    if (editTrucksTitle)
+      editTrucksTitle.textContent =
+        "Modifier le nombre de camions actifs — KIS";
+    modal.style.display = "block";
+  });
+}
+if (editTrucksBtnUTA) {
+  editTrucksBtnUTA.addEventListener("click", () => {
+    currentTrucksCompany = "UTA";
+    trucksInput.value = (activeTrucksSpanUTA?.textContent || "0").trim();
+    if (editTrucksTitle)
+      editTrucksTitle.textContent =
+        "Modifier le nombre de camions actifs — UTA";
+    modal.style.display = "block";
+  });
+}
 
 // Fermer la modal
 closeBtn.addEventListener("click", () => {
@@ -121,18 +141,21 @@ saveTrucksBtn.addEventListener("click", async () => {
     showNotification("Accès refusé: lecture seule", "error");
     return;
   }
+  if (!currentTrucksCompany) {
+    showNotification("Société inconnue pour la mise à jour", "error");
+    return;
+  }
   try {
     const user = auth.currentUser;
-    await settingsDocRef.set(
-      {
-        activeTrucks: newValue,
-        updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
-        updatedBy: user
-          ? getUserProfile(user.email)?.name || user.email
-          : "inconnu",
-      },
-      { merge: true }
-    );
+    const payload = {
+      updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
+      updatedBy: user
+        ? getUserProfile(user.email)?.name || user.email
+        : "inconnu",
+    };
+    if (currentTrucksCompany === "KIS") payload.activeTrucksKIS = newValue;
+    else if (currentTrucksCompany === "UTA") payload.activeTrucksUTA = newValue;
+    await settingsDocRef.set(payload, { merge: true });
     // Close modal; UI will be updated by onSnapshot below
     modal.style.display = "none";
     showNotification("Nombre de camions enregistré", "success");
@@ -159,6 +182,7 @@ const voyageCountSpan = document.getElementById("voyageCount");
 const avgEfficiencySpan = document.getElementById("avgEfficiency");
 const submitBtn = document.getElementById("submitBtn");
 const companyFilter = document.getElementById("companyFilter");
+const societeSelect = document.getElementById("societe");
 const statusFilter = document.getElementById("statusFilter");
 const incompleteOnly = document.getElementById("incompleteOnly");
 const openAnalyticsBtn = document.getElementById("openAnalytics");
@@ -282,9 +306,11 @@ function updateUIForRole() {
     document.querySelectorAll(".btn-edit, .btn-delete").forEach((btn) => {
       btn.style.display = canEdit ? "inline-flex" : "none";
     });
-    // Hide trucks edit icon when view-only
-    if (editTrucksBtn)
-      editTrucksBtn.style.display = canEdit ? "inline" : "none";
+    // Hide trucks edit icons when view-only
+    if (editTrucksBtnKIS)
+      editTrucksBtnKIS.style.display = canEdit ? "inline" : "none";
+    if (editTrucksBtnUTA)
+      editTrucksBtnUTA.style.display = canEdit ? "inline" : "none";
     // Toggle visibility of login/logout buttons
     if (loginBtn)
       loginBtn.style.display = auth.currentUser ? "none" : "inline-flex";
@@ -387,7 +413,7 @@ voyageForm.addEventListener("submit", async (e) => {
       document.getElementById("carburantRetour").value
     ),
     statut: document.getElementById("statut").value,
-    societe: document.getElementById("company-selector").value,
+    societe: societeSelect?.value || "KIS",
   };
 
   // Auto-status: if all end-of-journey timestamps are present, mark complete; otherwise, ensure not 'complet'
@@ -977,7 +1003,7 @@ async function editVoyage(id) {
       document.getElementById("carburantDepart").value = data.carburantDepart;
       document.getElementById("carburantRetour").value = data.carburantRetour;
       document.getElementById("statut").value = data.statut || "complet";
-      document.getElementById("company-selector").value = data.societe || "KIS";
+      if (societeSelect) societeSelect.value = data.societe || "KIS";
       editingId = id;
       if (submitBtn)
         submitBtn.innerHTML = '<i class="fas fa-save"></i> Mettre à jour';
@@ -1306,7 +1332,8 @@ exportPDFBtn.addEventListener("click", async () => {
       0
     );
     const activeTrucks =
-      parseInt(activeTrucksSpan?.textContent || "0", 10) || 0;
+      (parseInt(activeTrucksSpanKIS?.textContent || "0", 10) || 0) +
+      (parseInt(activeTrucksSpanUTA?.textContent || "0", 10) || 0);
     const stats = statusCounts(voyages);
 
     const kisLogo = await loadImageAsDataURL("img/logo.jpg");
@@ -1777,9 +1804,19 @@ function subscribeSettings() {
     settingsDocRef.onSnapshot(
       (doc) => {
         const data = doc.exists ? doc.data() : null;
-        const trucks =
-          data && typeof data.activeTrucks === "number" ? data.activeTrucks : 0;
-        if (activeTrucksSpan) activeTrucksSpan.textContent = String(trucks);
+        // Support legacy single field activeTrucks and new per-company fields
+        const kis =
+          (data && typeof data.activeTrucksKIS === "number"
+            ? data.activeTrucksKIS
+            : typeof data?.activeTrucks === "number"
+            ? data.activeTrucks
+            : 0) || 0;
+        const uta =
+          (data && typeof data.activeTrucksUTA === "number"
+            ? data.activeTrucksUTA
+            : 0) || 0;
+        if (activeTrucksSpanKIS) activeTrucksSpanKIS.textContent = String(kis);
+        if (activeTrucksSpanUTA) activeTrucksSpanUTA.textContent = String(uta);
         if (!initialSettingsLoaded) {
           initialSettingsLoaded = true;
           maybeHideLoader();

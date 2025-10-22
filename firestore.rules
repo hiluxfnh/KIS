@@ -58,10 +58,14 @@ service cloud.firestore {
     // Settings document for global app configuration
     match /settings/{docId} {
       allow read: if true;
-      allow write: if isEditor() && request.resource.data.keys().hasOnly(['activeTrucks','updatedAt','updatedBy']) &&
+      allow write: if isEditor() && request.resource.data.keys().hasOnly(['activeTrucksKIS','activeTrucksUTA','updatedAt','updatedBy']) &&
         (
-          !('activeTrucks' in request.resource.data) ||
-          (request.resource.data.activeTrucks is number && request.resource.data.activeTrucks >= 0)
+          !('activeTrucksKIS' in request.resource.data) ||
+          (request.resource.data.activeTrucksKIS is number && request.resource.data.activeTrucksKIS >= 0)
+        ) &&
+        (
+          !('activeTrucksUTA' in request.resource.data) ||
+          (request.resource.data.activeTrucksUTA is number && request.resource.data.activeTrucksUTA >= 0)
         ) &&
         (request.resource.data.updatedAt is timestamp) &&
         (request.resource.data.updatedBy is string);
