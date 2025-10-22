@@ -10,6 +10,38 @@
       href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"
     />
     <style>
+      .controls {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+        gap: 12px;
+        background: var(--light-blue);
+        padding: 16px 20px;
+        border-radius: 12px;
+        margin-bottom: 16px;
+      }
+      .kpis {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 14px;
+        margin-bottom: 18px;
+      }
+      .kpi {
+        background: #fff;
+        border-radius: 12px;
+        padding: 14px 16px;
+        border-left: 3px solid var(--secondary);
+        box-shadow: 0 3px 10px rgba(0, 0, 0, 0.05);
+      }
+      .kpi h4 {
+        margin: 0 0 6px;
+        font-size: 0.9rem;
+        color: var(--dark);
+      }
+      .kpi .val {
+        font-size: 1.4rem;
+        font-weight: 700;
+        color: var(--primary);
+      }
       .dashboard-grid {
         display: grid;
         grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
@@ -18,11 +50,11 @@
       .card {
         background: #fff;
         border-radius: 12px;
-        padding: 20px;
+        padding: 16px;
         box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
       }
       .card h3 {
-        margin-bottom: 12px;
+        margin-bottom: 10px;
         color: var(--primary);
         display: flex;
         align-items: center;
@@ -47,14 +79,110 @@
   <body>
     <main class="container">
       <h2><i class="fas fa-chart-line"></i> Tableau de bord</h2>
+
+      <section class="controls">
+        <div>
+          <label for="dashSearch"
+            ><i class="fas fa-search"></i> Rechercher</label
+          >
+          <input
+            type="text"
+            id="dashSearch"
+            placeholder="Chauffeur, camion, destination…"
+          />
+        </div>
+        <div>
+          <label for="dashTime"><i class="fas fa-calendar"></i> Période</label>
+          <select id="dashTime">
+            <option value="all">Toutes</option>
+            <option value="today">Aujourd'hui</option>
+            <option value="week">Cette semaine</option>
+            <option value="month" selected>Ce mois</option>
+            <option value="quarter">Ce trimestre</option>
+            <option value="year">Cette année</option>
+          </select>
+        </div>
+        <div>
+          <label for="dashCompany"
+            ><i class="fas fa-building"></i> Société</label
+          >
+          <select id="dashCompany">
+            <option value="all">Toutes</option>
+            <option value="KIS">KIS</option>
+            <option value="UTA">UTA</option>
+          </select>
+        </div>
+        <div>
+          <label for="dashStatus"
+            ><i class="fas fa-check-circle"></i> Statut</label
+          >
+          <select id="dashStatus">
+            <option value="all">Tous</option>
+            <option value="complet">Complet</option>
+            <option value="en-cours">En cours</option>
+            <option value="retard">Retard</option>
+            <option value="annule">Annulé</option>
+          </select>
+        </div>
+      </section>
+
+      <section class="kpis">
+        <div class="kpi">
+          <h4>Total voyages</h4>
+          <div class="val" id="kpiTotal">0</div>
+        </div>
+        <div class="kpi">
+          <h4>Distance totale</h4>
+          <div class="val" id="kpiDist">0 km</div>
+        </div>
+        <div class="kpi">
+          <h4>Efficacité moyenne</h4>
+          <div class="val" id="kpiAvgEff">0 km/L</div>
+        </div>
+        <div class="kpi">
+          <h4>Conso. moyenne</h4>
+          <div class="val" id="kpiL100">0 L/100 km</div>
+        </div>
+        <div class="kpi">
+          <h4>Incidents</h4>
+          <div class="val" id="kpiInc">0</div>
+        </div>
+        <div class="kpi">
+          <h4>Durée totale</h4>
+          <div class="val" id="kpiHours">0 h</div>
+        </div>
+      </section>
+
       <div class="dashboard-grid">
+        <section class="card">
+          <h3><i class="fas fa-calendar-alt"></i> Voyages par mois</h3>
+          <canvas id="monthlyTripsChart" height="220"></canvas>
+        </section>
         <section class="card">
           <h3><i class="fas fa-trophy"></i> Top 5 chauffeurs par efficacité</h3>
           <canvas id="efficiencyChart" height="220"></canvas>
         </section>
         <section class="card">
-          <h3><i class="fas fa-calendar-alt"></i> Voyages par mois</h3>
-          <canvas id="monthlyTripsChart" height="220"></canvas>
+          <h3><i class="fas fa-check"></i> Répartition des statuts</h3>
+          <canvas id="statusPie" height="220"></canvas>
+        </section>
+        <section class="card">
+          <h3><i class="fas fa-map-marker-alt"></i> Top destinations</h3>
+          <canvas id="topDestinations" height="220"></canvas>
+        </section>
+        <section class="card">
+          <h3><i class="fas fa-road"></i> Distance par société</h3>
+          <canvas id="distanceByCompany" height="220"></canvas>
+        </section>
+        <section class="card">
+          <h3>
+            <i class="fas fa-clock"></i> Utilisation par jour de la semaine
+          </h3>
+          <canvas id="weekdayUsage" height="220"></canvas>
+        </section>
+        <section class="card">
+          <h3><i class="fas fa-gas-pump"></i> Carburant vs Distance</h3>
+          <canvas id="fuelScatter" height="220"></canvas>
         </section>
         <section class="card">
           <h3>

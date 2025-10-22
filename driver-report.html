@@ -1,0 +1,231 @@
+<!DOCTYPE html>
+<html lang="fr">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Rapport chauffeur - KIS/UTA</title>
+    <link rel="stylesheet" href="style.css" />
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"
+    />
+    <style>
+      .driver-controls {
+        padding: 16px 20px;
+        background: var(--light-blue);
+        border-radius: 12px;
+        margin-bottom: 18px;
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+        gap: 12px;
+      }
+      .kpi-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+        gap: 16px;
+        margin-bottom: 20px;
+      }
+      .kpi {
+        background: #fff;
+        border-radius: 12px;
+        padding: 14px 16px;
+        box-shadow: 0 3px 10px rgba(0, 0, 0, 0.05);
+        border-left: 3px solid var(--secondary);
+      }
+      .kpi h4 {
+        font-size: 0.9rem;
+        color: var(--dark);
+        margin: 0 0 6px 0;
+      }
+      .kpi .val {
+        font-size: 1.4rem;
+        font-weight: 700;
+        color: var(--primary);
+      }
+      .charts-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+        gap: 20px;
+      }
+      .chart-card {
+        background: #fff;
+        border-radius: 12px;
+        padding: 16px;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+      }
+      .chart-card h3 {
+        margin-bottom: 10px;
+        color: var(--primary);
+        display: flex;
+        align-items: center;
+        gap: 8px;
+      }
+      .toolbar {
+        display: flex;
+        gap: 10px;
+        flex-wrap: wrap;
+      }
+      .toolbar .btn-export {
+        background: var(--secondary);
+      }
+      table.driver-table {
+        width: 100%;
+        border-collapse: separate;
+        border-spacing: 0;
+      }
+      table.driver-table th {
+        background: var(--primary);
+        color: #fff;
+        text-align: left;
+        padding: 10px;
+        position: sticky;
+        top: 0;
+      }
+      table.driver-table td {
+        border-bottom: 1px solid #e1e7ed;
+        padding: 10px;
+      }
+    </style>
+    <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-firestore-compat.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+  </head>
+  <body>
+    <main class="container">
+      <div class="table-header" style="margin-bottom: 12px">
+        <h2><i class="fas fa-id-card"></i> Rapport chauffeur</h2>
+        <div class="toolbar">
+          <a class="btn-export" href="index.html"
+            ><i class="fas fa-arrow-left"></i> Retour</a
+          >
+          <button id="exportExcelDriver" class="btn-export">
+            <i class="fas fa-file-excel"></i> Export Excel
+          </button>
+          <button id="exportPDFDriver" class="btn-export">
+            <i class="fas fa-file-pdf"></i> Export PDF
+          </button>
+        </div>
+      </div>
+
+      <section class="driver-controls">
+        <div>
+          <label for="searchDriver"
+            ><i class="fas fa-search"></i> Rechercher</label
+          >
+          <input
+            type="text"
+            id="searchDriver"
+            placeholder="Destination, client, incidents…"
+          />
+        </div>
+        <div>
+          <label for="driverSelect"
+            ><i class="fas fa-user"></i> Chauffeur</label
+          >
+          <select id="driverSelect"></select>
+        </div>
+        <div>
+          <label for="companySelect"
+            ><i class="fas fa-building"></i> Société</label
+          >
+          <select id="companySelect">
+            <option value="all">Toutes</option>
+            <option value="KIS">KIS</option>
+            <option value="UTA">UTA</option>
+          </select>
+        </div>
+        <div>
+          <label for="statusSelect"
+            ><i class="fas fa-check-circle"></i> Statut</label
+          >
+          <select id="statusSelect">
+            <option value="all">Tous</option>
+            <option value="complet">Complet</option>
+            <option value="en-cours">En cours</option>
+            <option value="retard">Retard</option>
+            <option value="annule">Annulé</option>
+          </select>
+        </div>
+        <div>
+          <label for="startDate"><i class="fas fa-calendar-alt"></i> Du</label>
+          <input type="date" id="startDate" />
+        </div>
+        <div>
+          <label for="endDate"><i class="fas fa-calendar-alt"></i> Au</label>
+          <input type="date" id="endDate" />
+        </div>
+        <div>
+          <label>&nbsp;</label>
+          <button id="applyFilters" class="btn-export" style="width: 100%">
+            <i class="fas fa-filter"></i> Appliquer
+          </button>
+        </div>
+      </section>
+
+      <section class="kpi-grid">
+        <div class="kpi">
+          <h4>Total voyages</h4>
+          <div class="val" id="kpiTrips">0</div>
+        </div>
+        <div class="kpi">
+          <h4>Distance totale</h4>
+          <div class="val" id="kpiDistance">0 km</div>
+        </div>
+        <div class="kpi">
+          <h4>Efficacité moyenne</h4>
+          <div class="val" id="kpiEff">0 km/L</div>
+        </div>
+        <div class="kpi">
+          <h4>Conso. moyenne</h4>
+          <div class="val" id="kpiCons">0 L/100 km</div>
+        </div>
+        <div class="kpi">
+          <h4>Durée totale</h4>
+          <div class="val" id="kpiHours">0 h</div>
+        </div>
+      </section>
+
+      <section class="charts-grid" style="margin-bottom: 20px">
+        <div class="chart-card">
+          <h3><i class="fas fa-chart-line"></i> Distances dans le temps</h3>
+          <canvas id="distanceTimeline" height="180"></canvas>
+        </div>
+        <div class="chart-card">
+          <h3><i class="fas fa-map-marker-alt"></i> Top destinations</h3>
+          <canvas id="topDestinations" height="180"></canvas>
+        </div>
+        <div class="chart-card">
+          <h3><i class="fas fa-check"></i> Répartition des statuts</h3>
+          <canvas id="statusPie" height="180"></canvas>
+        </div>
+      </section>
+
+      <section class="table-section">
+        <div class="table-header">
+          <h2><i class="fas fa-table"></i> Détails des voyages</h2>
+        </div>
+        <div class="table-container">
+          <table class="driver-table">
+            <thead>
+              <tr>
+                <th>Départ</th>
+                <th>Camion</th>
+                <th>N° ordre</th>
+                <th>Client</th>
+                <th>Destination</th>
+                <th>Distance</th>
+                <th>Carburant</th>
+                <th>Perf.</th>
+                <th>Statut</th>
+                <th>Incidents</th>
+              </tr>
+            </thead>
+            <tbody id="driverTableBody"></tbody>
+          </table>
+        </div>
+      </section>
+    </main>
+
+    <script src="driver-report.js"></script>
+  </body>
+</html>

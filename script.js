@@ -621,6 +621,13 @@ if (calcDistanceBtn) {
   calcDistanceBtn.addEventListener("click", computeDistanceFromCities);
 }
 
+// Open driver report page
+if (driverReportBtn) {
+  driverReportBtn.addEventListener("click", () => {
+    window.location.href = "driver-report.html";
+  });
+}
+
 function validateVoyage(v) {
   const errs = [];
   if (!v.chauffeur) errs.push("Nom du chauffeur requis");
@@ -1145,20 +1152,51 @@ async function deleteVoyage(id) {
 }
 
 // Export Excel
+function loadScriptOnce(src) {
+  return new Promise((resolve, reject) => {
+    // If already loaded, resolve immediately
+    if (document.querySelector(`script[data-src="${src}"]`)) {
+      resolve();
+      return;
+    }
+    const s = document.createElement("script");
+    s.src = src;
+    s.async = true;
+    s.defer = true;
+    s.setAttribute("data-src", src);
+    s.onload = () => resolve();
+    s.onerror = () => reject(new Error(`Échec de chargement: ${src}`));
+    document.head.appendChild(s);
+  });
+}
+
 async function loadXLSX() {
   if (window.XLSX) return window.XLSX;
-  await import(
-    "https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"
-  );
+  // Try primary CDN, then fallback
+  const primary =
+    "https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js";
+  const fallback =
+    "https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js";
+  try {
+    await loadScriptOnce(primary);
+  } catch (e) {
+    try {
+      await loadScriptOnce(fallback);
+    } catch (e2) {
+      throw e2;
+    }
+  }
   return window.XLSX;
 }
 
 exportExcelBtn.addEventListener("click", async () => {
   try {
+    showNotification("Génération Excel…", "info");
     const XLSX = await loadXLSX();
-    const snapshot = await voyagesCollection.get();
-    const rows = snapshot.docs.map((doc) => {
-      const v = doc.data();
+
+    // Use current filtered view rather than refetching from Firestore
+    const voyages = computeFilteredVoyages();
+    const rows = voyages.map((v) => {
       const destCombined = v.destinationDetail
         ? `${v.destination || ""} - ${v.destinationDetail}`
         : v.destination || "";
@@ -1185,8 +1223,8 @@ exportExcelBtn.addEventListener("click", async () => {
         Number(v.distance || 0),
         Number(v.carburantDepart ?? 0),
         efficiency,
-        v.documentation || "",
-        v.incidents || "",
+        (v.documentation || "").trim(),
+        (v.incidents || "").trim(),
         v.statut || "complet",
       ];
     });
@@ -1220,10 +1258,36 @@ exportExcelBtn.addEventListener("click", async () => {
     const aoa = [...context, ...header, ...rows];
     const ws = XLSX.utils.aoa_to_sheet(aoa);
     const wb = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(wb, ws, "Voyages KIS/UTA");
-    XLSX.writeFile(wb, "rapport_voyages_kis_uta.xlsx");
+    // Sheet names must not contain : \ / ? * [ ] and must be <= 31 chars
+    XLSX.utils.book_append_sheet(wb, ws, "Voyages KIS-UTA");
+
+    if (XLSX.writeFile) {
+      XLSX.writeFile(wb, "rapport_voyages_kis_uta.xlsx");
+    } else {
+      // Fallback: binary string -> blob -> download
+      const wbout = XLSX.write(wb, { bookType: "xlsx", type: "array" });
+      const blob = new Blob([wbout], {
+        type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+      });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = "rapport_voyages_kis_uta.xlsx";
+      document.body.appendChild(a);
+      a.click();
+      setTimeout(() => {
+        URL.revokeObjectURL(url);
+        a.remove();
+      }, 0);
+    }
+
+    showNotification("Export Excel généré", "success");
   } catch (error) {
     console.error("Erreur d'export Excel: ", error);
+    showNotification(
+      "Erreur d'export Excel: " + (error?.message || String(error)),
+      "error"
+    );
   }
 });
 
