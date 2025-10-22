@@ -376,7 +376,70 @@ auth.onAuthStateChanged((user) => {
         : "Éditeur"
       : "Lecture seule";
   updateUIForRole();
+
+  // Offer a one-time cleanup migration to remove legacy 'carburantRetour' fields
+  if (canEdit) {
+    setTimeout(() => {
+      try {
+        const done = localStorage.getItem(
+          "kis:migrated:removeCarburantRetour"
+        );
+        if (!done) maybePromptMigrationRemoveCarburantRetour();
+      } catch {}
+    }, 300);
+  }
 });
+
+async function maybePromptMigrationRemoveCarburantRetour() {
+  const confirmRun = confirm(
+    "Nettoyage: supprimer définitivement le champ 'Carburant retour (L)' des voyages existants ?"
+  );
+  if (!confirmRun) return;
+  await migrateRemoveCarburantRetour();
+}
+
+async function migrateRemoveCarburantRetour() {
+  if (!canEdit) return;
+  try {
+    showLoader?.();
+    const snap = await voyagesCollection.get();
+    const db = firebase.firestore();
+    const docs = snap.docs.filter((d) =>
+      Object.prototype.hasOwnProperty.call(d.data(), "carburantRetour")
+    );
+    let updated = 0;
+    const batchSize = 400;
+    let batch = db.batch();
+    for (let i = 0; i < docs.length; i++) {
+      const doc = docs[i];
+      batch.update(doc.ref, {
+        carburantRetour: firebase.firestore.FieldValue.delete(),
+      });
+      updated++;
+      if (updated % batchSize === 0) {
+        await batch.commit();
+        batch = db.batch();
+      }
+    }
+    // Commit remaining
+    await batch.commit();
+    try {
+      localStorage.setItem("kis:migrated:removeCarburantRetour", "1");
+    } catch {}
+    showNotification(
+      `Nettoyage terminé: ${updated} document(s) mis à jour`,
+      "success"
+    );
+  } catch (e) {
+    console.error("Migration cleanup error", e);
+    showNotification(
+      "Erreur lors du nettoyage des anciens champs carburant retour",
+      "error"
+    );
+  } finally {
+    hideLoader?.();
+  }
+}
 
 // Soumission du formulaire
 voyageForm.addEventListener("submit", async (e) => {
@@ -410,9 +473,6 @@ voyageForm.addEventListener("submit", async (e) => {
     incidents: document.getElementById("incidents").value.trim(),
     carburantDepart: parseFloat(
       document.getElementById("carburantDepart").value
-    ),
-    carburantRetour: parseFloat(
-      document.getElementById("carburantRetour").value
     ),
     statut: document.getElementById("statut").value,
     societe: societeSelect?.value || "KIS",
@@ -562,14 +622,7 @@ function validateVoyage(v) {
   if (!isNaN(v.distance) && v.distance < 0) errs.push("Distance invalide");
   if (!isNaN(v.carburantDepart) && v.carburantDepart < 0)
     errs.push("Carburant départ invalide");
-  if (!isNaN(v.carburantRetour) && v.carburantRetour < 0)
-    errs.push("Carburant retour invalide");
-  if (
-    !isNaN(v.carburantRetour) &&
-    !isNaN(v.carburantDepart) &&
-    v.carburantRetour > v.carburantDepart
-  )
-    errs.push("Carburant retour > départ");
+  // No 'carburant retour' anymore
   const d1 = asDate(v.dateDepart),
     d2 = asDate(v.clientArrivalTime),
     d3 = asDate(v.clientDepartureTime),
@@ -603,12 +656,12 @@ function renderTable(data) {
   data.forEach((voyage) => {
     const row = document.createElement("tr");
 
-    // Calcul des métriques de performance
-    const fuelUsed =
-      (voyage.carburantDepart ?? 0) - (voyage.carburantRetour ?? 0);
+    // Calcul des métriques de performance (basé seulement sur carburant départ)
+    const departFuel =
+      typeof voyage.carburantDepart === "number" ? voyage.carburantDepart : 0;
     const efficiency =
-      fuelUsed > 0 && voyage.distance > 0
-        ? (voyage.distance / fuelUsed).toFixed(2)
+      departFuel > 0 && (voyage.distance || 0) > 0
+        ? ((voyage.distance || 0) / departFuel).toFixed(2)
         : "N/A";
 
     // Formatage des dates
@@ -647,7 +700,6 @@ function renderTable(data) {
             </td>
             <td>${voyage.distance ?? 0} km</td>
             <td>${voyage.carburantDepart ?? 0} L</td>
-            <td>${voyage.carburantRetour ?? 0} L</td>
             <td class="${getPerformanceClass(efficiency)}">
                 ${getPerformanceIcon(efficiency)} ${efficiency} km/L
             </td>
@@ -688,9 +740,10 @@ function renderTable(data) {
         .querySelectorAll(`thead th:nth-child(${i}), tbody td:nth-child(${i})`)
         .forEach((cell) => (cell.style.display = show ? "" : "none"));
     };
-    hideShow(14, showPerf);
-    hideShow(15, showDocs);
-    hideShow(16, showInc);
+    // After removing 'Carb. retour', indices shift by -1
+    hideShow(13, showPerf);
+    hideShow(14, showDocs);
+    hideShow(15, showInc);
   }
 }
 
@@ -750,9 +803,9 @@ function calculateStats() {
   let count = 0;
 
   allVoyages.forEach((voyage) => {
-    const fuelUsed = voyage.carburantDepart - voyage.carburantRetour;
-    if (fuelUsed > 0 && voyage.distance > 0) {
-      totalEfficiency += voyage.distance / fuelUsed;
+    const dep = typeof voyage.carburantDepart === "number" ? voyage.carburantDepart : 0;
+    if (dep > 0 && (voyage.distance || 0) > 0) {
+      totalEfficiency += (voyage.distance || 0) / dep;
       count++;
     }
   });
@@ -777,9 +830,9 @@ function calculateStats() {
     driverStats[driver].count++;
     driverStats[driver].totalDistance += voyage.distance || 0;
 
-    const fuelUsed = voyage.carburantDepart - voyage.carburantRetour;
-    if (fuelUsed > 0) {
-      driverStats[driver].totalFuelUsed += fuelUsed;
+    const dep = typeof voyage.carburantDepart === "number" ? voyage.carburantDepart : 0;
+    if (dep > 0) {
+      driverStats[driver].totalFuelUsed += dep;
     }
 
     const durationHours = calculateDurationHours(
@@ -964,13 +1017,9 @@ function sortData() {
 // Tri par performance
 function sortByPerformance() {
   const sorted = [...allVoyages].sort((a, b) => {
-    const fuelUsedA = a.carburantDepart - a.carburantRetour;
-    const fuelUsedB = b.carburantDepart - b.carburantRetour;
-
-    const efficiencyA = fuelUsedA > 0 ? a.distance / fuelUsedA : 0;
-    const efficiencyB = fuelUsedB > 0 ? b.distance / fuelUsedB : 0;
-
-    return efficiencyB - efficiencyA;
+    const ea = efficiencyOf(a) || 0;
+    const eb = efficiencyOf(b) || 0;
+    return eb - ea;
   });
 
   renderTable(sorted);
@@ -1012,7 +1061,7 @@ async function editVoyage(id) {
       document.getElementById("documentation").value = data.documentation || "";
       document.getElementById("incidents").value = data.incidents || "";
       document.getElementById("carburantDepart").value = data.carburantDepart;
-      document.getElementById("carburantRetour").value = data.carburantRetour;
+      // No 'carburant retour' field anymore
       document.getElementById("statut").value = data.statut || "complet";
       if (societeSelect) societeSelect.value = data.societe || "KIS";
       editingId = id;
@@ -1070,10 +1119,10 @@ exportExcelBtn.addEventListener("click", async () => {
       const destCombined = v.destinationDetail
         ? `${v.destination || ""} - ${v.destinationDetail}`
         : v.destination || "";
-      const fuelUsed = (v.carburantDepart ?? 0) - (v.carburantRetour ?? 0);
+      const depart = typeof v.carburantDepart === "number" ? v.carburantDepart : 0;
       const efficiency =
-        fuelUsed > 0 && v.distance > 0
-          ? (v.distance / fuelUsed).toFixed(2)
+        depart > 0 && (v.distance || 0) > 0
+          ? ((v.distance || 0) / depart).toFixed(2)
           : "N/A";
       return [
         v.numeroOrdreTransport || "",
@@ -1091,7 +1140,6 @@ exportExcelBtn.addEventListener("click", async () => {
         }`,
         Number(v.distance || 0),
         Number(v.carburantDepart ?? 0),
-        Number(v.carburantRetour ?? 0),
         efficiency,
         v.documentation || "",
         v.incidents || "",
@@ -1114,7 +1162,6 @@ exportExcelBtn.addEventListener("click", async () => {
         "Positionnement",
         "Distance",
         "Carburant départ (L)",
-        "Carburant retour (L)",
         "Efficacité (km/L)",
         "Documentation",
         "Incidents",
@@ -1196,11 +1243,9 @@ function computeFilteredVoyages() {
   const field = filterSelect.value;
   if (field === "performance") {
     filtered.sort((a, b) => {
-      const fuA = (a.carburantDepart ?? 0) - (a.carburantRetour ?? 0);
-      const fuB = (b.carburantDepart ?? 0) - (b.carburantRetour ?? 0);
-      const eA = fuA > 0 ? (a.distance || 0) / fuA : 0;
-      const eB = fuB > 0 ? (b.distance || 0) / fuB : 0;
-      return eB - eA;
+      const ea = efficiencyOf(a) || 0;
+      const eb = efficiencyOf(b) || 0;
+      return eb - ea;
     });
   } else {
     filtered.sort((a, b) => {
@@ -1228,8 +1273,10 @@ function formatNumber(n) {
   }
 }
 function efficiencyOf(v) {
-  const fu = (v.carburantDepart ?? 0) - (v.carburantRetour ?? 0);
-  return fu > 0 && (v.distance || 0) > 0 ? v.distance / fu : null;
+  const depart = typeof v.carburantDepart === "number" ? v.carburantDepart : null;
+  if (depart == null || depart <= 0 || !(v.distance > 0)) return null;
+  // With only depart available, treat depart as fuel used for the trip
+  return v.distance / depart;
 }
 function statusCounts(vs) {
   return vs.reduce((m, v) => {
@@ -1505,7 +1552,7 @@ exportPDFBtn.addEventListener("click", async () => {
     );
     // Third KPI: Consommation moyenne (L/100 km)
     const totalFuelUsed = voyages.reduce((acc, v) => {
-      const fu = (v.carburantDepart ?? 0) - (v.carburantRetour ?? 0);
+      const fu = Number(v.carburantDepart ?? 0);
       return fu > 0 ? acc + fu : acc;
     }, 0);
     const avgConsLPer100 =
@@ -1581,7 +1628,7 @@ exportPDFBtn.addEventListener("click", async () => {
 
       // Build table
       const tableBody = rows.map((v) => {
-        const fu = (v.carburantDepart ?? 0) - (v.carburantRetour ?? 0);
+        const fu = Number(v.carburantDepart ?? 0);
         const eff = fu > 0 ? (v.distance || 0) / fu : null;
         const destCombined = v.destinationDetail
           ? `${v.destination || ""} - ${v.destinationDetail}`

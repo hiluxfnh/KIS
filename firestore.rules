@@ -36,10 +36,7 @@ service cloud.firestore {
 
         // Optional numbers
         (!('distance' in data) || (data.distance is number && data.distance >= 0)) &&
-        (!('carburantDepart' in data) || (data.carburantDepart is number && data.carburantDepart >= 0)) &&
-        (!('carburantRetour' in data) || (data.carburantRetour is number && data.carburantRetour >= 0)) &&
-        // If both carburants provided, retour cannot exceed depart
-        (!('carburantDepart' in data && 'carburantRetour' in data) || data.carburantRetour <= data.carburantDepart) &&
+  (!('carburantDepart' in data) || (data.carburantDepart is number && data.carburantDepart >= 0)) &&
 
         // Optional timestamps
         (!('dateDepart' in data) || data.dateDepart is timestamp) &&
