@@ -33,6 +33,9 @@ service cloud.firestore {
     (!('numeroOrdreTransport' in data) || data.numeroOrdreTransport is string) &&
     (!('villeDepart' in data) || data.villeDepart is string) &&
   (!('destinationDetail' in data) || data.destinationDetail is string) &&
+  (!('natureMarchandise' in data) || data.natureMarchandise is string) &&
+  (!('numeroConteneur' in data) || data.numeroConteneur is string) &&
+  (!('numeroPlomb' in data) || data.numeroPlomb is string) &&
 
         // Optional numbers
         (!('distance' in data) || (data.distance is number && data.distance >= 0)) &&

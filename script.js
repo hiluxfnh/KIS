@@ -381,9 +381,7 @@ auth.onAuthStateChanged((user) => {
   if (canEdit) {
     setTimeout(() => {
       try {
-        const done = localStorage.getItem(
-          "kis:migrated:removeCarburantRetour"
-        );
+        const done = localStorage.getItem("kis:migrated:removeCarburantRetour");
         if (!done) maybePromptMigrationRemoveCarburantRetour();
       } catch {}
     }, 300);
@@ -469,6 +467,13 @@ voyageForm.addEventListener("submit", async (e) => {
     containerPositioningLocation: document
       .getElementById("containerPositioningLocation")
       .value.trim(),
+    numeroConteneur: (
+      document.getElementById("numeroConteneur")?.value || ""
+    ).trim(),
+    numeroPlomb: (document.getElementById("numeroPlomb")?.value || "").trim(),
+    natureMarchandise: (
+      document.getElementById("natureMarchandise")?.value || ""
+    ).trim(),
     documentation: document.getElementById("documentation").value.trim(),
     incidents: document.getElementById("incidents").value.trim(),
     carburantDepart: parseFloat(
@@ -689,7 +694,9 @@ function renderTable(data) {
       <td>${escapeHTML(voyage.camion || "")}</td>
   <td>${escapeHTML(voyage.numeroOrdreTransport || "")}</td>
       <td>${escapeHTML(voyage.societe || "KIS")}</td>
-    <td>${destDisplay}</td>
+      <td>${escapeHTML(voyage.villeDepart || "")}</td>
+      <td>${destDisplay}</td>
+      <td>${escapeHTML(voyage.natureMarchandise || "")}</td>
             <td>${formatDate(voyage.dateDepart)}</td>
             <td>${formatDate(voyage.clientArrivalTime)}</td>
             <td>${formatDate(voyage.clientDepartureTime)}</td>
@@ -698,6 +705,8 @@ function renderTable(data) {
                 ${formatDate(voyage.containerPositioningDate)}<br>
         ${escapeHTML(voyage.containerPositioningLocation)}
             </td>
+        <td>${escapeHTML(voyage.numeroConteneur || "")}</td>
+        <td>${escapeHTML(voyage.numeroPlomb || "")}</td>
             <td>${voyage.distance ?? 0} km</td>
             <td>${voyage.carburantDepart ?? 0} L</td>
             <td class="${getPerformanceClass(efficiency)}">
@@ -740,10 +749,11 @@ function renderTable(data) {
         .querySelectorAll(`thead th:nth-child(${i}), tbody td:nth-child(${i})`)
         .forEach((cell) => (cell.style.display = show ? "" : "none"));
     };
-    // After removing 'Carb. retour', indices shift by -1
-    hideShow(13, showPerf);
-    hideShow(14, showDocs);
-    hideShow(15, showInc);
+    // After adding Ville départ, Nature, N° conteneur, N° plomb, indices shift
+    // Performance=17, Documentation=18, Incidents=19
+    hideShow(17, showPerf);
+    hideShow(18, showDocs);
+    hideShow(19, showInc);
   }
 }
 
@@ -803,7 +813,8 @@ function calculateStats() {
   let count = 0;
 
   allVoyages.forEach((voyage) => {
-    const dep = typeof voyage.carburantDepart === "number" ? voyage.carburantDepart : 0;
+    const dep =
+      typeof voyage.carburantDepart === "number" ? voyage.carburantDepart : 0;
     if (dep > 0 && (voyage.distance || 0) > 0) {
       totalEfficiency += (voyage.distance || 0) / dep;
       count++;
@@ -830,7 +841,8 @@ function calculateStats() {
     driverStats[driver].count++;
     driverStats[driver].totalDistance += voyage.distance || 0;
 
-    const dep = typeof voyage.carburantDepart === "number" ? voyage.carburantDepart : 0;
+    const dep =
+      typeof voyage.carburantDepart === "number" ? voyage.carburantDepart : 0;
     if (dep > 0) {
       driverStats[driver].totalFuelUsed += dep;
     }
@@ -1058,6 +1070,13 @@ async function editVoyage(id) {
         formatDateForInput(data.containerPositioningDate);
       document.getElementById("containerPositioningLocation").value =
         data.containerPositioningLocation || "";
+      const numeroConteneurEl = document.getElementById("numeroConteneur");
+      if (numeroConteneurEl)
+        numeroConteneurEl.value = data.numeroConteneur || "";
+      const numeroPlombEl = document.getElementById("numeroPlomb");
+      if (numeroPlombEl) numeroPlombEl.value = data.numeroPlomb || "";
+      const natureEl = document.getElementById("natureMarchandise");
+      if (natureEl) natureEl.value = data.natureMarchandise || "";
       document.getElementById("documentation").value = data.documentation || "";
       document.getElementById("incidents").value = data.incidents || "";
       document.getElementById("carburantDepart").value = data.carburantDepart;
@@ -1119,7 +1138,8 @@ exportExcelBtn.addEventListener("click", async () => {
       const destCombined = v.destinationDetail
         ? `${v.destination || ""} - ${v.destinationDetail}`
         : v.destination || "";
-      const depart = typeof v.carburantDepart === "number" ? v.carburantDepart : 0;
+      const depart =
+        typeof v.carburantDepart === "number" ? v.carburantDepart : 0;
       const efficiency =
         depart > 0 && (v.distance || 0) > 0
           ? ((v.distance || 0) / depart).toFixed(2)
@@ -1209,6 +1229,9 @@ function computeFilteredVoyages() {
       (v.camion || "").toLowerCase().includes(term) ||
       (v.destination || "").toLowerCase().includes(term) ||
       (v.destinationDetail || "").toLowerCase().includes(term) ||
+      (v.natureMarchandise || "").toLowerCase().includes(term) ||
+      (v.numeroConteneur || "").toLowerCase().includes(term) ||
+      (v.numeroPlomb || "").toLowerCase().includes(term) ||
       (v.documentation || "").toLowerCase().includes(term) ||
       (v.containerPositioningLocation || "").toLowerCase().includes(term) ||
       (v.societe || "").toLowerCase().includes(term);
@@ -1273,7 +1296,8 @@ function formatNumber(n) {
   }
 }
 function efficiencyOf(v) {
-  const depart = typeof v.carburantDepart === "number" ? v.carburantDepart : null;
+  const depart =
+    typeof v.carburantDepart === "number" ? v.carburantDepart : null;
   if (depart == null || depart <= 0 || !(v.distance > 0)) return null;
   // With only depart available, treat depart as fuel used for the trip
   return v.distance / depart;
