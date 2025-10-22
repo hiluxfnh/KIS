@@ -36,6 +36,7 @@ service cloud.firestore {
   (!('natureMarchandise' in data) || data.natureMarchandise is string) &&
   (!('numeroConteneur' in data) || data.numeroConteneur is string) &&
   (!('numeroPlomb' in data) || data.numeroPlomb is string) &&
+  (!('client' in data) || data.client is string) &&
 
         // Optional numbers
         (!('distance' in data) || (data.distance is number && data.distance >= 0)) &&

@@ -452,6 +452,7 @@ voyageForm.addEventListener("submit", async (e) => {
     destination: document.getElementById("destination").value.trim(),
     destinationDetail: (destinationDetailInput?.value || "").trim(),
     villeDepart: (villeDepartInput?.value || "").trim(),
+    client: (document.getElementById("client")?.value || "").trim(),
     distance: parseFloat(document.getElementById("distance").value),
     dateDepart: asDate(document.getElementById("dateDepart").value),
     clientArrivalTime: asDate(
@@ -695,8 +696,9 @@ function renderTable(data) {
   <td>${escapeHTML(voyage.numeroOrdreTransport || "")}</td>
       <td>${escapeHTML(voyage.societe || "KIS")}</td>
       <td>${escapeHTML(voyage.villeDepart || "")}</td>
-      <td>${destDisplay}</td>
-      <td>${escapeHTML(voyage.natureMarchandise || "")}</td>
+  <td>${destDisplay}</td>
+  <td>${escapeHTML(voyage.client || "")}</td>
+  <td>${escapeHTML(voyage.natureMarchandise || "")}</td>
             <td>${formatDate(voyage.dateDepart)}</td>
             <td>${formatDate(voyage.clientArrivalTime)}</td>
             <td>${formatDate(voyage.clientDepartureTime)}</td>
@@ -749,11 +751,11 @@ function renderTable(data) {
         .querySelectorAll(`thead th:nth-child(${i}), tbody td:nth-child(${i})`)
         .forEach((cell) => (cell.style.display = show ? "" : "none"));
     };
-    // After adding Ville départ, Nature, N° conteneur, N° plomb, indices shift
-    // Performance=17, Documentation=18, Incidents=19
-    hideShow(17, showPerf);
-    hideShow(18, showDocs);
-    hideShow(19, showInc);
+    // After adding Ville départ, Client, Nature, N° conteneur, N° plomb
+    // Performance=18, Documentation=19, Incidents=20
+    hideShow(18, showPerf);
+    hideShow(19, showDocs);
+    hideShow(20, showInc);
   }
 }
 
@@ -935,6 +937,25 @@ if (toggleIncidents)
     persistFilters();
   });
 
+// Mobile: toggle filters visibility
+const toggleFiltersBtn = document.getElementById("toggleFiltersBtn");
+const filtersWrap = document.getElementById("filtersWrap");
+if (toggleFiltersBtn && filtersWrap) {
+  toggleFiltersBtn.addEventListener("click", () => {
+    const expanded = toggleFiltersBtn.getAttribute("aria-expanded") === "true";
+    toggleFiltersBtn.setAttribute("aria-expanded", (!expanded).toString());
+    const hidden = filtersWrap.getAttribute("aria-hidden") === "true";
+    filtersWrap.setAttribute("aria-hidden", hidden ? "false" : "true");
+  });
+  // Ensure filters visible when resizing back to desktop
+  window.addEventListener("resize", () => {
+    if (window.innerWidth > 768) {
+      filtersWrap.setAttribute("aria-hidden", "false");
+      toggleFiltersBtn.setAttribute("aria-expanded", "true");
+    }
+  });
+}
+
 function applyFilters() {
   const now = new Date();
   const term = (searchInput.value || "").toLowerCase();
@@ -945,6 +966,7 @@ function applyFilters() {
       (v.camion || "").toLowerCase().includes(term) ||
       (v.destination || "").toLowerCase().includes(term) ||
       (v.destinationDetail || "").toLowerCase().includes(term) ||
+      (v.client || "").toLowerCase().includes(term) ||
       (v.documentation || "").toLowerCase().includes(term) ||
       (v.containerPositioningLocation || "").toLowerCase().includes(term) ||
       (v.societe || "").toLowerCase().includes(term);
@@ -1053,6 +1075,8 @@ async function editVoyage(id) {
       if (villeDepartInput) {
         villeDepartInput.value = data.villeDepart || "Kribi";
       }
+      const clientEl = document.getElementById("client");
+      if (clientEl) clientEl.value = data.client || "";
       document.getElementById("distance").value = data.distance || "";
       document.getElementById("dateDepart").value = formatDateForInput(
         data.dateDepart
@@ -1653,7 +1677,6 @@ exportPDFBtn.addEventListener("click", async () => {
       // Build table
       const tableBody = rows.map((v) => {
         const fu = Number(v.carburantDepart ?? 0);
-        const eff = fu > 0 ? (v.distance || 0) / fu : null;
         const destCombined = v.destinationDetail
           ? `${v.destination || ""} - ${v.destinationDetail}`
           : v.destination || "";
@@ -1662,11 +1685,11 @@ exportPDFBtn.addEventListener("click", async () => {
           v.chauffeur || "",
           v.camion || "",
           v.numeroOrdreTransport || "",
-          v.villeDepart || "",
+          v.client || "",
           destCombined,
+          v.natureMarchandise || "",
           v.distance || 0,
           fu > 0 ? fu.toFixed(1) : 0,
-          eff ? eff.toFixed(2) : "N/A",
           v.statut || "complet",
         ];
       });
@@ -1679,11 +1702,11 @@ exportPDFBtn.addEventListener("click", async () => {
             "Chauffeur",
             "Camion",
             "N° ordre",
-            "Ville départ",
+            "Client",
             "Destination",
+            "Marchandises",
             "Distance",
             "Carburant (L)",
-            "Efficacité (km/L)",
             "Statut",
           ],
         ],
@@ -1703,15 +1726,15 @@ exportPDFBtn.addEventListener("click", async () => {
           lineWidth: 0.1,
         },
         columnStyles: {
-          0: { cellWidth: 24 }, // Départ
-          1: { cellWidth: 22 }, // Chauffeur
-          2: { cellWidth: 18 }, // Camion
+          0: { cellWidth: 22 }, // Départ
+          1: { cellWidth: 20 }, // Chauffeur
+          2: { cellWidth: 16 }, // Camion
           3: { cellWidth: 18 }, // N° ordre
-          4: { cellWidth: 22 }, // Ville départ
-          5: { cellWidth: 26 }, // Destination
-          6: { cellWidth: 16, halign: "right" }, // Distance
-          7: { cellWidth: 18, halign: "right" }, // Carburant
-          8: { cellWidth: 20, halign: "right" }, // Efficacité
+          4: { cellWidth: 24 }, // Client
+          5: { cellWidth: 28 }, // Destination
+          6: { cellWidth: 26 }, // Marchandises
+          7: { cellWidth: 15, halign: "right" }, // Distance
+          8: { cellWidth: 16, halign: "right" }, // Carburant
           9: { cellWidth: 16, halign: "center" }, // Statut
         },
         // Center the table horizontally and keep within margins
@@ -1719,8 +1742,8 @@ exportPDFBtn.addEventListener("click", async () => {
         tableWidth: "wrap",
         margin: { left: margin, right: margin, top: 24 },
         willDrawCell: (data) => {
-          // Color status chips
-          if (data.section === "body" && data.column.index === 8) {
+          // Color status chips in last column
+          if (data.section === "body" && data.column.index === 9) {
             const s = String(data.cell.raw);
             let bg = [230, 230, 230];
             if (s === "complet") bg = [40, 167, 69];
@@ -1773,6 +1796,44 @@ exportPDFBtn.addEventListener("click", async () => {
             1: { cellWidth: 40 },
             2: { cellWidth: 60 },
             3: { cellWidth: 16, halign: "right" },
+          },
+          halign: "center",
+          tableWidth: "wrap",
+          margin: { left: margin, right: margin },
+        });
+      } catch {}
+
+      // Additional annex: Marchandises & Conteneurs (compact)
+      try {
+        const yStart = (doc.lastAutoTable ? doc.lastAutoTable.finalY : 26) + 6;
+        const cargoRows = voyages.map((v, i) => [
+          i + 1,
+          v.natureMarchandise || "",
+          v.numeroConteneur || "",
+          v.numeroPlomb || "",
+        ]);
+        // Title
+        doc.setTextColor(primary[0], primary[1], primary[2]);
+        doc.setFont("helvetica", "bold");
+        doc.setFontSize(12);
+        doc.text("Annexe — Marchandises & Conteneurs", margin, yStart);
+        doc.autoTable({
+          startY: yStart + 4,
+          head: [["#", "Nature marchandise", "N° conteneur", "N° plomb"]],
+          body: cargoRows,
+          theme: "grid",
+          headStyles: {
+            fillColor: [230, 230, 230],
+            fontStyle: "bold",
+            fontSize: 8,
+            cellPadding: 1.5,
+          },
+          styles: { fontSize: 7.2, cellPadding: 1.5, overflow: "linebreak" },
+          columnStyles: {
+            0: { cellWidth: 8, halign: "center" },
+            1: { cellWidth: 70 },
+            2: { cellWidth: 30 },
+            3: { cellWidth: 24 },
           },
           halign: "center",
           tableWidth: "wrap",

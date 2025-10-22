@@ -62,7 +62,7 @@
 
     <main class="container">
       <section class="dashboard">
-        <div class="stats-card">
+        <div class="stats-card kis">
           <div class="card-header">
             <i class="fas fa-truck"></i>
             <h3>Camions actifs — KIS</h3>
@@ -70,7 +70,7 @@
           </div>
           <span id="active-trucks-kis">0</span>
         </div>
-        <div class="stats-card">
+        <div class="stats-card uta">
           <div class="card-header">
             <i class="fas fa-truck"></i>
             <h3>Camions actifs — UTA</h3>
@@ -208,6 +208,13 @@
                   placeholder="Ex: Kribi"
                   value="Kribi"
                 />
+              </div>
+
+              <div class="form-group">
+                <label for="client"
+                  ><i class="fas fa-user-tie"></i> Client</label
+                >
+                <input type="text" id="client" placeholder="Nom du client" />
               </div>
 
               <div class="form-group">
@@ -358,7 +365,18 @@
             <input type="text" id="searchInput" placeholder="Rechercher..." />
           </div>
 
-          <div class="filters">
+          <!-- Mobile toggle for filters -->
+          <button
+            id="toggleFiltersBtn"
+            class="btn-toggle filters-toggle"
+            aria-expanded="true"
+            aria-controls="filtersWrap"
+            title="Afficher/Masquer les filtres"
+          >
+            <i class="fas fa-sliders-h" aria-hidden="true"></i>
+          </button>
+
+          <div class="filters" id="filtersWrap" aria-hidden="false">
             <select id="filterSelect">
               <option value="chauffeur">Trier par chauffeur</option>
               <option value="camion">Trier par camion</option>
@@ -392,31 +410,21 @@
             <label
               class="incomplete-filter"
               title="Afficher uniquement les voyages incomplets"
-              style="display: flex; align-items: center; gap: 6px"
             >
               <input type="checkbox" id="incompleteOnly" /> Incomplets
               uniquement
             </label>
 
             <!-- Column visibility toggles -->
-            <div
-              class="column-toggles"
-              title="Afficher/Masquer des colonnes"
-              style="
-                display: flex;
-                align-items: center;
-                gap: 10px;
-                margin-left: 10px;
-              "
-            >
-              <label style="display: flex; align-items: center; gap: 6px">
+            <div class="column-toggles" title="Afficher/Masquer des colonnes">
+              <label>
                 <input type="checkbox" id="togglePerformance" checked />
                 Performance
               </label>
-              <label style="display: flex; align-items: center; gap: 6px">
+              <label>
                 <input type="checkbox" id="toggleDocs" checked /> Documentation
               </label>
-              <label style="display: flex; align-items: center; gap: 6px">
+              <label>
                 <input type="checkbox" id="toggleIncidents" checked /> Incidents
               </label>
             </div>
@@ -466,9 +474,8 @@
                 <th data-sort="destination">
                   <i class="fas fa-map-marker-alt"></i> Destination
                 </th>
-                <th>
-                  <i class="fas fa-cubes"></i> Nature marchandise
-                </th>
+                <th><i class="fas fa-user-tie"></i> Client</th>
+                <th><i class="fas fa-cubes"></i> Nature marchandise</th>
                 <th data-sort="dateDepart">
                   <i class="fas fa-calendar-alt"></i> Départ
                 </th>
