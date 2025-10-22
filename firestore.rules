@@ -27,11 +27,12 @@ service cloud.firestore {
 
         // Optional strings
         (!('destination' in data) || data.destination is string) &&
-        (!('documentation' in data) || data.documentation is string) &&
+    (!('documentation' in data) || data.documentation is string) &&
         (!('incidents' in data) || data.incidents is string) &&
         (!('containerPositioningLocation' in data) || data.containerPositioningLocation is string) &&
     (!('numeroOrdreTransport' in data) || data.numeroOrdreTransport is string) &&
     (!('villeDepart' in data) || data.villeDepart is string) &&
+  (!('destinationDetail' in data) || data.destinationDetail is string) &&
 
         // Optional numbers
         (!('distance' in data) || (data.distance is number && data.distance >= 0)) &&

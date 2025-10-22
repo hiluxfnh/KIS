@@ -188,6 +188,7 @@ const incompleteOnly = document.getElementById("incompleteOnly");
 const openAnalyticsBtn = document.getElementById("openAnalytics");
 const villeDepartInput = document.getElementById("villeDepart");
 const destinationInput = document.getElementById("destination");
+const destinationDetailInput = document.getElementById("destinationDetail");
 const calcDistanceBtn = document.getElementById("calcDistance");
 // Column toggle controls
 const togglePerformance = document.getElementById("togglePerformance");
@@ -388,6 +389,7 @@ voyageForm.addEventListener("submit", async (e) => {
     chauffeur: document.getElementById("chauffeur").value.trim(),
     camion: document.getElementById("camion").value.trim(),
     destination: document.getElementById("destination").value.trim(),
+    destinationDetail: (destinationDetailInput?.value || "").trim(),
     villeDepart: (villeDepartInput?.value || "").trim(),
     distance: parseFloat(document.getElementById("distance").value),
     dateDepart: asDate(document.getElementById("dateDepart").value),
@@ -623,12 +625,18 @@ function renderTable(data) {
         : "N/A";
     };
 
+    const destDisplay = (() => {
+      const city = escapeHTML(voyage.destination || "");
+      const detail = escapeHTML(voyage.destinationDetail || "");
+      return detail ? `${city} - ${detail}` : city;
+    })();
+
     row.innerHTML = `
       <td>${escapeHTML(voyage.chauffeur || "")}</td>
       <td>${escapeHTML(voyage.camion || "")}</td>
   <td>${escapeHTML(voyage.numeroOrdreTransport || "")}</td>
       <td>${escapeHTML(voyage.societe || "KIS")}</td>
-    <td>${escapeHTML(voyage.destination || "")}</td>
+    <td>${destDisplay}</td>
             <td>${formatDate(voyage.dateDepart)}</td>
             <td>${formatDate(voyage.clientArrivalTime)}</td>
             <td>${formatDate(voyage.clientDepartureTime)}</td>
@@ -871,6 +879,7 @@ function applyFilters() {
       (v.chauffeur || "").toLowerCase().includes(term) ||
       (v.camion || "").toLowerCase().includes(term) ||
       (v.destination || "").toLowerCase().includes(term) ||
+      (v.destinationDetail || "").toLowerCase().includes(term) ||
       (v.documentation || "").toLowerCase().includes(term) ||
       (v.containerPositioningLocation || "").toLowerCase().includes(term) ||
       (v.societe || "").toLowerCase().includes(term);
@@ -978,6 +987,8 @@ async function editVoyage(id) {
       document.getElementById("chauffeur").value = data.chauffeur;
       document.getElementById("camion").value = data.camion;
       document.getElementById("destination").value = data.destination;
+      if (destinationDetailInput)
+        destinationDetailInput.value = data.destinationDetail || "";
       if (villeDepartInput) {
         villeDepartInput.value = data.villeDepart || "Kribi";
       }
@@ -1056,6 +1067,9 @@ exportExcelBtn.addEventListener("click", async () => {
     const snapshot = await voyagesCollection.get();
     const rows = snapshot.docs.map((doc) => {
       const v = doc.data();
+      const destCombined = v.destinationDetail
+        ? `${v.destination || ""} - ${v.destinationDetail}`
+        : v.destination || "";
       const fuelUsed = (v.carburantDepart ?? 0) - (v.carburantRetour ?? 0);
       const efficiency =
         fuelUsed > 0 && v.distance > 0
@@ -1067,7 +1081,7 @@ exportExcelBtn.addEventListener("click", async () => {
         v.camion || "",
         v.societe || "KIS",
         v.villeDepart || "",
-        v.destination || "",
+        destCombined,
         formatDateForPDF(v.dateDepart),
         formatDateForPDF(v.clientArrivalTime),
         formatDateForPDF(v.clientDepartureTime),
@@ -1147,6 +1161,7 @@ function computeFilteredVoyages() {
       (v.chauffeur || "").toLowerCase().includes(term) ||
       (v.camion || "").toLowerCase().includes(term) ||
       (v.destination || "").toLowerCase().includes(term) ||
+      (v.destinationDetail || "").toLowerCase().includes(term) ||
       (v.documentation || "").toLowerCase().includes(term) ||
       (v.containerPositioningLocation || "").toLowerCase().includes(term) ||
       (v.societe || "").toLowerCase().includes(term);
@@ -1568,13 +1583,16 @@ exportPDFBtn.addEventListener("click", async () => {
       const tableBody = rows.map((v) => {
         const fu = (v.carburantDepart ?? 0) - (v.carburantRetour ?? 0);
         const eff = fu > 0 ? (v.distance || 0) / fu : null;
+        const destCombined = v.destinationDetail
+          ? `${v.destination || ""} - ${v.destinationDetail}`
+          : v.destination || "";
         return [
           formatDateForPDF(v.dateDepart),
           v.chauffeur || "",
           v.camion || "",
           v.numeroOrdreTransport || "",
           v.villeDepart || "",
-          v.destination || "",
+          destCombined,
           v.distance || 0,
           fu > 0 ? fu.toFixed(1) : 0,
           eff ? eff.toFixed(2) : "N/A",
@@ -1662,7 +1680,9 @@ exportPDFBtn.addEventListener("click", async () => {
         const annexRows = voyages.map((v, i) => [
           i + 1,
           v.villeDepart || "",
-          v.destination || "",
+          v.destinationDetail
+            ? `${v.destination || ""} - ${v.destinationDetail}`
+            : v.destination || "",
           v.distance || 0,
         ]);
         doc.autoTable({
@@ -1695,7 +1715,9 @@ exportPDFBtn.addEventListener("click", async () => {
       let y = doc.lastAutoTable ? doc.lastAutoTable.finalY + 6 : 28;
       voyages.forEach((v, i) => {
         const header = `${i + 1}. ${v.chauffeur || ""} — ${v.camion || ""} (${
-          v.destination || ""
+          v.destinationDetail
+            ? `${v.destination || ""} - ${v.destinationDetail}`
+            : v.destination || ""
         })`;
         doc.setFont("helvetica", "bold");
         doc.setTextColor(40);
