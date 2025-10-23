@@ -393,7 +393,7 @@ exportExcelDriverBtn.addEventListener("click", async () => {
         "Arrivée client",
         "Départ client",
         "Arrivée Kribi",
-  "Positionnement du TC vide",
+        "Positionnement du TC vide",
         "Distance",
         "Carburant (L)",
         "Efficacité (km/L)",

@@ -308,8 +308,8 @@
 
               <div class="form-group">
                 <label for="containerPositioningLocation"
-                  ><i class="fas fa-map-pin"></i> Lieu de positionnement du
-                  TC vide</label
+                  ><i class="fas fa-map-pin"></i> Lieu de positionnement du TC
+                  vide</label
                 >
                 <input type="text" id="containerPositioningLocation" />
                 <small class="form-hint"
@@ -407,6 +407,7 @@
               <option value="today">Aujourd'hui</option>
               <option value="week">Cette semaine</option>
               <option value="month">Ce mois</option>
+              <option value="custom">Plage personnalisée…</option>
             </select>
 
             <select id="companyFilter" title="Filtrer par société">
@@ -430,6 +431,20 @@
               <input type="checkbox" id="incompleteOnly" /> Incomplets
               uniquement
             </label>
+
+            <div
+              id="customRangeWrap"
+              style="
+                display: none;
+                gap: 8px;
+                align-items: center;
+                margin-left: 8px;
+              "
+            >
+              <input type="date" id="timeStartDate" />
+              <span>→</span>
+              <input type="date" id="timeEndDate" />
+            </div>
 
             <!-- Column visibility toggles -->
             <div class="column-toggles" title="Afficher/Masquer des colonnes">
@@ -498,7 +513,9 @@
                 <th><i class="fas fa-clock"></i> Arrivée client</th>
                 <th><i class="fas fa-clock"></i> Départ client</th>
                 <th><i class="fas fa-map-marker-alt"></i> Arrivée Kribi</th>
-                <th><i class="fas fa-calendar"></i> Positionnement du TC vide</th>
+                <th>
+                  <i class="fas fa-calendar"></i> Positionnement du TC vide
+                </th>
                 <th><i class="fas fa-box"></i> N° conteneur</th>
                 <th><i class="fas fa-key"></i> N° plomb</th>
                 <th><i class="fas fa-road"></i> Distance</th>

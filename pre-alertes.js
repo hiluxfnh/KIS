@@ -33,6 +33,8 @@ const preComments = el("preComments");
 
 const preSearch = el("preSearch");
 const preTime = el("preTime");
+const preStartDate = el("preStartDate");
+const preEndDate = el("preEndDate");
 const preCompany = el("preCompany");
 const preStatusFilter = el("preStatusFilter");
 const preCount = el("preCount");
@@ -148,7 +150,16 @@ function render() {
     const compOk = comp === "all" || (x.societe || "KIS") === comp;
     const statOk = stat === "all" || (x.status || "transmis") === stat;
     const d = asDate(x.preReceivedDate);
-    const timeOk = !tStart || (d ? d >= tStart : false);
+    let timeOk = true;
+    if (preTime.value === "custom") {
+      const s = preStartDate?.value ? new Date(preStartDate.value) : null;
+      const e = preEndDate?.value ? new Date(preEndDate.value) : null;
+      if (s) s.setHours(0, 0, 0, 0);
+      if (e) e.setHours(23, 59, 59, 999);
+      timeOk = d ? (!s || d >= s) && (!e || d <= e) : false;
+    } else {
+      timeOk = !tStart || (d ? d >= tStart : false);
+    }
     return matches && compOk && statOk && timeOk;
   });
 
@@ -263,6 +274,32 @@ function wire() {
   [preTime, preCompany, preStatusFilter].forEach(
     (c) => c && c.addEventListener("change", render)
   );
+  if (preTime)
+    preTime.addEventListener("change", () => {
+      try {
+        const w = document.getElementById("preCustomRangeWrap");
+        if (w)
+          w.style.display = preTime.value === "custom" ? "inline-flex" : "none";
+        // When switching to custom, prefill defaults if empty: first day of month -> today
+        if (preTime.value === "custom") {
+          const now = new Date();
+          const yyyy = now.getFullYear();
+          const mm = String(now.getMonth() + 1).padStart(2, "0");
+          const dd = String(now.getDate()).padStart(2, "0");
+          if (preStartDate && !preStartDate.value) {
+            const start = new Date(now.getFullYear(), now.getMonth(), 1);
+            const sm = String(start.getMonth() + 1).padStart(2, "0");
+            const sd = String(start.getDate()).padStart(2, "0");
+            preStartDate.value = `${start.getFullYear()}-${sm}-${sd}`;
+          }
+          if (preEndDate && !preEndDate.value) {
+            preEndDate.value = `${yyyy}-${mm}-${dd}`;
+          }
+        }
+      } catch {}
+    });
+  if (preStartDate) preStartDate.addEventListener("change", render);
+  if (preEndDate) preEndDate.addEventListener("change", render);
   if (togglePreForm && preFormWrap) {
     // Align with global collapse behavior using aria-hidden
     preFormWrap.setAttribute("aria-hidden", "false");
@@ -400,6 +437,28 @@ async function exportExcel() {
     const dd = String(now.getDate()).padStart(2, "0");
     preReceived.value = `${yyyy}-${mm}-${dd}`;
   } catch {}
+  // Initialize custom range UI visibility and defaults on load
+  try {
+    const w = document.getElementById("preCustomRangeWrap");
+    if (w)
+      w.style.display = preTime.value === "custom" ? "inline-flex" : "none";
+    if (preTime.value === "custom") {
+      const now = new Date();
+      const yyyy = now.getFullYear();
+      const mm = String(now.getMonth() + 1).padStart(2, "0");
+      const dd = String(now.getDate()).padStart(2, "0");
+      if (preStartDate && !preStartDate.value) {
+        const start = new Date(now.getFullYear(), now.getMonth(), 1);
+        const sm = String(start.getMonth() + 1).padStart(2, "0");
+        const sd = String(start.getDate()).padStart(2, "0");
+        preStartDate.value = `${start.getFullYear()}-${sm}-${sd}`;
+      }
+      if (preEndDate && !preEndDate.value) {
+        preEndDate.value = `${yyyy}-${mm}-${dd}`;
+      }
+      render();
+    }
+  } catch {}
   // Auto-status suggestions based on dates
   function suggestStatus() {
     try {
@@ -516,6 +575,14 @@ function periodText() {
   if (val === "month") {
     const start = new Date(now.getFullYear(), now.getMonth(), 1);
     return `Mois du ${fmt(start)} au ${fmt(now)}`;
+  }
+  if (val === "custom") {
+    const s = preStartDate?.value ? new Date(preStartDate.value) : null;
+    const e = preEndDate?.value ? new Date(preEndDate.value) : null;
+    if (!(s || e)) return "Plage personnalisée (non définie)";
+    const a = s ? fmt(s) : "—";
+    const b = e ? fmt(e) : fmt(now);
+    return `Du ${a} au ${b}`;
   }
   return "Toutes les données";
 }

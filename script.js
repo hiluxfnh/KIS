@@ -173,6 +173,8 @@ const voyagesTable = document
 const searchInput = document.getElementById("searchInput");
 const filterSelect = document.getElementById("filterSelect");
 const timeFilter = document.getElementById("timeFilter");
+const timeStartDate = document.getElementById("timeStartDate");
+const timeEndDate = document.getElementById("timeEndDate");
 const exportExcelBtn = document.getElementById("exportExcel");
 const exportPDFBtn = document.getElementById("exportPDF");
 const driverReportBtn = document.getElementById("driverReport");
@@ -281,6 +283,10 @@ function initDates() {
     const saved = JSON.parse(localStorage.getItem("kis:filters") || "{}");
     if (saved.filterSelect) filterSelect.value = saved.filterSelect;
     if (saved.timeFilter) timeFilter.value = saved.timeFilter;
+    if (saved.customRangeStart && timeStartDate)
+      timeStartDate.value = saved.customRangeStart;
+    if (saved.customRangeEnd && timeEndDate)
+      timeEndDate.value = saved.customRangeEnd;
     if (saved.companyFilter) companyFilter.value = saved.companyFilter;
     if (saved.statusFilter) statusFilter.value = saved.statusFilter;
     if (saved.incompleteOnly != null && incompleteOnly)
@@ -293,6 +299,13 @@ function initDates() {
       if (toggleIncidents)
         toggleIncidents.checked = saved.cols.incidents !== false;
     }
+  } catch {}
+  // Ensure custom range visibility on load
+  try {
+    const wrap = document.getElementById("customRangeWrap");
+    if (wrap)
+      wrap.style.display =
+        timeFilter.value === "custom" ? "inline-flex" : "none";
   } catch {}
 }
 
@@ -646,7 +659,8 @@ function validateVoyage(v) {
   if (d1 && d2 && d1 > d2) errs.push("Arrivée client avant départ");
   if (d2 && d3 && d2 > d3) errs.push("Départ client avant arrivée");
   if (d3 && d4 && d3 > d4) errs.push("Arrivée Kribi avant départ client");
-  if (d4 && d5 && d4 > d5) errs.push("Positionnement du TC vide avant arrivée à Kribi");
+  if (d4 && d5 && d4 > d5)
+    errs.push("Positionnement du TC vide avant arrivée à Kribi");
   return errs;
 }
 
@@ -897,6 +911,8 @@ function persistFilters() {
       JSON.stringify({
         filterSelect: filterSelect.value,
         timeFilter: timeFilter.value,
+        customRangeStart: timeStartDate?.value || "",
+        customRangeEnd: timeEndDate?.value || "",
         companyFilter: companyFilter.value,
         statusFilter: statusFilter.value,
         incompleteOnly: !!incompleteOnly?.checked,
@@ -914,7 +930,24 @@ function persistFilters() {
 timeFilter.addEventListener("change", () => {
   applyFilters();
   persistFilters();
+  // Toggle custom range visibility
+  try {
+    const wrap = document.getElementById("customRangeWrap");
+    if (wrap)
+      wrap.style.display =
+        timeFilter.value === "custom" ? "inline-flex" : "none";
+  } catch {}
 });
+if (timeStartDate)
+  timeStartDate.addEventListener("change", () => {
+    applyFilters();
+    persistFilters();
+  });
+if (timeEndDate)
+  timeEndDate.addEventListener("change", () => {
+    applyFilters();
+    persistFilters();
+  });
 companyFilter.addEventListener("change", () => {
   applyFilters();
   persistFilters();
@@ -1000,6 +1033,12 @@ function applyFilters() {
     } else if (timeFilter.value === "month") {
       const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
       timeOk = d ? d >= monthStart : false;
+    } else if (timeFilter.value === "custom") {
+      const s = timeStartDate?.value ? new Date(timeStartDate.value) : null;
+      const e = timeEndDate?.value ? new Date(timeEndDate.value) : null;
+      if (s) s.setHours(0, 0, 0, 0);
+      if (e) e.setHours(23, 59, 59, 999);
+      timeOk = d ? (!s || d >= s) && (!e || d <= e) : false;
     }
 
     // Incomplete-only logic: end-of-journey fields missing
@@ -1242,7 +1281,7 @@ exportExcelBtn.addEventListener("click", async () => {
         "Heure arrivée client",
         "Heure départ client",
         "Arrivée Kribi",
-  "Positionnement du TC vide",
+        "Positionnement du TC vide",
         "Distance",
         "Carburant départ (L)",
         "Efficacité (km/L)",
@@ -1346,6 +1385,12 @@ function computeFilteredVoyages() {
     } else if (timeFilter.value === "month") {
       const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
       timeOk = d ? d >= monthStart : false;
+    } else if (timeFilter.value === "custom") {
+      const s = timeStartDate?.value ? new Date(timeStartDate.value) : null;
+      const e = timeEndDate?.value ? new Date(timeEndDate.value) : null;
+      if (s) s.setHours(0, 0, 0, 0);
+      if (e) e.setHours(23, 59, 59, 999);
+      timeOk = d ? (!s || d >= s) && (!e || d <= e) : false;
     }
 
     return matchesSearch && companyOk && statusOk && timeOk;
@@ -1444,6 +1489,14 @@ function periodText() {
     if (val === "month") {
       const start = new Date(now.getFullYear(), now.getMonth(), 1);
       return `Mois du ${fmt(start)} au ${fmt(now)}`;
+    }
+    if (val === "custom") {
+      const s = timeStartDate?.value ? new Date(timeStartDate.value) : null;
+      const e = timeEndDate?.value ? new Date(timeEndDate.value) : null;
+      if (!(s || e)) return "Plage personnalisée (non définie)";
+      const a = s ? fmt(s) : "—";
+      const b = e ? fmt(e) : fmt(now);
+      return `Du ${a} au ${b}`;
     }
     return "Toutes les données";
   } catch {

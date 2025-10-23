@@ -181,7 +181,16 @@
               <option value="today">Aujourd'hui</option>
               <option value="week">Cette semaine</option>
               <option value="month" selected>Ce mois</option>
+              <option value="custom">Plage personnalisée…</option>
             </select>
+            <div
+              id="preCustomRangeWrap"
+              style="display: none; gap: 8px; align-items: center"
+            >
+              <input type="date" id="preStartDate" />
+              <span>→</span>
+              <input type="date" id="preEndDate" />
+            </div>
             <select id="preCompany">
               <option value="all">Toutes sociétés</option>
               <option value="KIS">KIS</option>
