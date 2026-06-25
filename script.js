@@ -1927,36 +1927,61 @@ exportPDFBtn.addEventListener("click", async () => {
       chipX += w + chipGap;
     });
 
-    // Watermark if filters/search active
+    // Small "filtered" badge near the meta (replaces intrusive watermark)
     const filtersActive =
       timeFilter?.value !== "all" ||
       statusFilter?.value !== "all" ||
       companyFilter?.value !== "all" ||
       (searchInput?.value || "").trim() !== "";
     if (filtersActive) {
-      doc.setTextColor(230);
-      doc.setFontSize(42);
-      doc.text("FILTRÉ", width / 2, height / 2, { angle: 45, align: "center" });
+      const fLabel = "Données filtrées";
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(8.5);
+      const fw = doc.getTextWidth(fLabel) + 9;
+      const fx = width - margin - fw;
+      const fy = metaY - 5.5;
+      doc.setFillColor(accent[0], accent[1], accent[2]);
+      doc.roundedRect(fx, fy, fw, 8, 2, 2, "F");
+      doc.setTextColor(255);
+      doc.text(fLabel, fx + 4.5, fy + 5.4);
       doc.setTextColor(20);
     }
 
-    // 2) Per-company tables
+    // 2) Per-company tables (landscape pages for full-width readability)
     const grouped = groupByCompany(voyages);
     const companies = Object.keys(grouped);
-    if (companies.length) doc.addPage();
+
+    const STATUS_PDF = {
+      complet: { label: "Complet", bg: [5, 150, 105] },
+      "en-cours": { label: "En cours", bg: [217, 119, 6] },
+      retard: { label: "Retard", bg: [220, 38, 38] },
+      annule: { label: "Annulé", bg: [100, 116, 139] },
+    };
 
     for (let idx = 0; idx < companies.length; idx++) {
       const comp = companies[idx];
       const rows = grouped[comp];
       const color = comp === "UTA" ? accent : secondary;
 
-      // Section header
+      doc.addPage("a4", "landscape");
+      const lw = doc.internal.pageSize.getWidth();
+
+      // Section header band
       doc.setFillColor(color[0], color[1], color[2]);
-      doc.rect(0, 0, width, 18, "F");
+      doc.rect(0, 0, lw, 18, "F");
       doc.setTextColor(255);
       doc.setFont("helvetica", "bold");
       doc.setFontSize(13);
-      doc.text(`${comp} — ${rows.length} voyages`, margin, 12);
+      doc.text(`${comp} — ${rows.length} voyage${rows.length > 1 ? "s" : ""}`, margin, 11.5);
+      const compDist = sum(rows, (v) => v.distance || 0);
+      doc.setFont("helvetica", "normal");
+      doc.setFontSize(9.5);
+      doc.text(
+        `Distance cumulée: ${formatPlainNumber(compDist, 0)} km`,
+        lw - margin,
+        11.5,
+        { align: "right" }
+      );
 
       // Build table
       const tableBody = rows.map((v) => {
@@ -1973,8 +1998,8 @@ exportPDFBtn.addEventListener("click", async () => {
           destCombined,
           v.natureMarchandise || "",
           v.distance || 0,
-          fu > 0 ? fu.toFixed(1) : 0,
-          v.statut || "complet",
+          fu > 0 ? fu.toFixed(1) : "0",
+          (STATUS_PDF[v.statut] || { label: v.statut || "Complet" }).label,
         ];
       });
 
@@ -1990,7 +2015,7 @@ exportPDFBtn.addEventListener("click", async () => {
             "Destination",
             "Marchandises",
             "Distance",
-            "Carburant (L)",
+            "Carb. (L)",
             "Statut",
           ],
         ],
@@ -1998,57 +2023,57 @@ exportPDFBtn.addEventListener("click", async () => {
         theme: "grid",
         headStyles: {
           fillColor: color,
+          textColor: 255,
           fontStyle: "bold",
           fontSize: 9,
-          cellPadding: 2,
+          cellPadding: 2.5,
+          valign: "middle",
+          lineColor: [255, 255, 255],
+          lineWidth: 0.1,
         },
         styles: {
-          fontSize: 8,
-          cellPadding: 2,
+          fontSize: 8.5,
+          cellPadding: 2.5,
           valign: "middle",
           overflow: "linebreak",
           lineWidth: 0.1,
+          lineColor: [226, 232, 240],
+          textColor: [40, 40, 40],
         },
+        alternateRowStyles: { fillColor: [248, 250, 252] },
         columnStyles: {
-          0: { cellWidth: 22 }, // Départ
-          1: { cellWidth: 20 }, // Chauffeur
-          2: { cellWidth: 16 }, // Camion
+          0: { cellWidth: 28 }, // Départ
+          1: { cellWidth: 34 }, // Chauffeur
+          2: { cellWidth: 26 }, // Camion
           3: { cellWidth: 18 }, // N° ordre
-          4: { cellWidth: 24 }, // Client
-          5: { cellWidth: 28 }, // Destination
-          6: { cellWidth: 26 }, // Marchandises
-          7: { cellWidth: 15, halign: "right" }, // Distance
-          8: { cellWidth: 16, halign: "right" }, // Carburant
-          9: { cellWidth: 16, halign: "center" }, // Statut
+          4: { cellWidth: 28 }, // Client
+          5: { cellWidth: 40 }, // Destination
+          6: { cellWidth: 35 }, // Marchandises
+          7: { cellWidth: 18, halign: "right" }, // Distance
+          8: { cellWidth: 20, halign: "right" }, // Carburant
+          9: { cellWidth: 22, halign: "center" }, // Statut
         },
-        // Center the table horizontally and keep within margins
-        halign: "center",
-        tableWidth: "wrap",
-        margin: { left: margin, right: margin, top: 24 },
+        margin: { left: margin, right: margin },
         willDrawCell: (data) => {
           // Color status chips in last column
           if (data.section === "body" && data.column.index === 9) {
-            const s = String(data.cell.raw);
-            let bg = [230, 230, 230];
-            if (s === "complet") bg = [40, 167, 69];
-            else if (s === "en-cours") bg = [255, 193, 7];
-            else if (s === "retard") bg = [220, 53, 69];
-            else if (s === "annule") bg = [108, 117, 125];
-            doc.setFillColor(...bg);
+            const raw = String(data.cell.raw || "");
+            const found = Object.values(STATUS_PDF).find(
+              (s) => s.label === raw
+            );
+            const bg = found ? found.bg : [148, 163, 184];
+            doc.setFillColor(bg[0], bg[1], bg[2]);
             const { x, y, width: w, height: h } = data.cell;
-            doc.roundedRect(x + 1, y + 1.2, w - 2, h - 2.4, 2, 2, "F");
-            doc.setTextColor(bg[0] > 200 ? 0 : 255);
+            doc.roundedRect(x + 1.5, y + 1.5, w - 3, h - 3, 1.5, 1.5, "F");
+            doc.setTextColor(255);
           }
         },
       });
-
-      // Add a new page between companies, except after last
-      if (idx < companies.length - 1) doc.addPage();
     }
 
     // 3) Annex: details and incidents
     if (voyages.length) {
-      doc.addPage();
+      doc.addPage("a4", "portrait");
       doc.setFont("helvetica", "bold");
       doc.setTextColor(primary[0], primary[1], primary[2]);
       doc.setFontSize(14);
@@ -2138,7 +2163,7 @@ exportPDFBtn.addEventListener("click", async () => {
         doc.setFont("helvetica", "bold");
         doc.setTextColor(40);
         if (y > height - 30) {
-          doc.addPage();
+          doc.addPage("a4", "portrait");
           y = margin;
         }
         doc.text(header, margin, y);
@@ -2161,7 +2186,7 @@ exportPDFBtn.addEventListener("click", async () => {
         );
         lines1.forEach((ln) => {
           if (y > height - 20) {
-            doc.addPage();
+            doc.addPage("a4", "portrait");
             y = margin;
           }
           doc.text(ln, margin, y);
@@ -2175,7 +2200,7 @@ exportPDFBtn.addEventListener("click", async () => {
         );
         lines2.forEach((ln) => {
           if (y > height - 20) {
-            doc.addPage();
+            doc.addPage("a4", "portrait");
             y = margin;
           }
           doc.text(ln, margin, y);
@@ -2187,7 +2212,7 @@ exportPDFBtn.addEventListener("click", async () => {
         );
         lines3.forEach((ln) => {
           if (y > height - 20) {
-            doc.addPage();
+            doc.addPage("a4", "portrait");
             y = margin;
           }
           doc.text(ln, margin, y);
@@ -2202,7 +2227,7 @@ exportPDFBtn.addEventListener("click", async () => {
 
     // Signature blocks page
     if (voyages.length) {
-      doc.addPage();
+      doc.addPage("a4", "portrait");
       doc.setFont("helvetica", "bold");
       doc.setFontSize(12);
       doc.text("Signatures", margin, 24);
