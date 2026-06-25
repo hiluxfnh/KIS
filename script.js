@@ -53,32 +53,35 @@ function showNotification(message, type = "info") {
     if (!container) {
       container = document.createElement("div");
       container.id = containerId;
-      container.style.position = "fixed";
-      container.style.top = "16px";
-      container.style.right = "16px";
-      container.style.zIndex = "9999";
+      container.style.cssText = "position:fixed;top:16px;right:16px;z-index:9999;display:flex;flex-direction:column;gap:8px;";
       container.setAttribute("aria-live", "polite");
       container.setAttribute("role", "status");
       document.body.appendChild(container);
     }
+    const bgMap = { success: "#28a745", error: "#dc3545", warning: "#e09800", info: "#2c5aa0" };
     const note = document.createElement("div");
-    note.textContent = message;
     note.className = `notification ${type}`;
-    note.style.background =
-      type === "error"
-        ? "#f8d7da"
-        : type === "success"
-        ? "#d1e7dd"
-        : type === "warning"
-        ? "#fff3cd"
-        : "#e2e3e5";
-    note.style.color = "#000";
-    note.style.padding = "8px 12px";
-    note.style.marginTop = "8px";
-    note.style.borderRadius = "6px";
-    note.style.boxShadow = "0 2px 8px rgba(0,0,0,0.15)";
+    note.style.cssText = `background:${bgMap[type]||bgMap.info};color:#fff;padding:11px 16px;border-radius:8px;font-weight:600;font-size:0.92rem;box-shadow:0 4px 14px rgba(0,0,0,0.18);display:flex;align-items:center;gap:8px;min-width:220px;max-width:380px;opacity:0;transform:translateX(20px);transition:all 0.25s ease;cursor:pointer;`;
+    const iconMap = { success: "✓", error: "⚠", warning: "!", info: "ℹ" };
+    const iconSpan = document.createElement("span");
+    iconSpan.style.cssText = "font-size:1em;flex-shrink:0;font-weight:900;";
+    iconSpan.textContent = iconMap[type] || "ℹ";
+    const textSpan = document.createElement("span");
+    textSpan.textContent = message;
+    note.appendChild(iconSpan);
+    note.appendChild(textSpan);
+    note.addEventListener("click", () => note.remove());
     container.appendChild(note);
-    setTimeout(() => note.remove(), 3000);
+    requestAnimationFrame(() => {
+      note.style.opacity = "1";
+      note.style.transform = "translateX(0)";
+    });
+    const dur = type === "error" ? 5000 : 3200;
+    setTimeout(() => {
+      note.style.opacity = "0";
+      note.style.transform = "translateX(20px)";
+      setTimeout(() => note.remove(), 280);
+    }, dur);
   } catch (e) {
     console.log((type || "INFO").toUpperCase() + ": " + message);
   }
@@ -213,12 +216,16 @@ const voyageFormWrap = document.getElementById("voyageFormWrap");
 
 // Variables globales
 let currentSortField = "dateDepart";
-let lastSortField = null;
-let isAscending = true;
+let currentSortAsc = false; // default: newest first
 let allVoyages = [];
+let filteredVoyages = []; // current filtered+sorted set
 let driverStats = {};
 let editingId = null;
 let canEdit = false; // Simple role flag (also enforced by Firestore rules)
+
+// Pagination state
+let pageSize = 25;
+let currentPage = 1;
 
 // Whitelist of authorized users with roles and profile
 const AUTH_CONFIG = {
@@ -391,24 +398,16 @@ auth.onAuthStateChanged((user) => {
       : "Lecture seule";
   updateUIForRole();
 
-  // Offer a one-time cleanup migration to remove legacy 'carburantRetour' fields
+  // One-time cleanup migration (silent background, no disruptive confirm popup)
   if (canEdit) {
     setTimeout(() => {
       try {
         const done = localStorage.getItem("kis:migrated:removeCarburantRetour");
-        if (!done) maybePromptMigrationRemoveCarburantRetour();
+        if (!done) migrateRemoveCarburantRetour();
       } catch {}
-    }, 300);
+    }, 2000);
   }
 });
-
-async function maybePromptMigrationRemoveCarburantRetour() {
-  const confirmRun = confirm(
-    "Nettoyage: supprimer définitivement le champ 'Carburant retour (L)' des voyages existants ?"
-  );
-  if (!confirmRun) return;
-  await migrateRemoveCarburantRetour();
-}
 
 async function migrateRemoveCarburantRetour() {
   if (!canEdit) return;
@@ -544,8 +543,14 @@ voyageForm.addEventListener("submit", async (e) => {
     }
     voyageForm.reset();
     editingId = null;
-    if (submitBtn)
-      submitBtn.innerHTML = '<i class="fas fa-save"></i> Enregistrer';
+    if (submitBtn) submitBtn.innerHTML = '<i class="fas fa-save"></i> Enregistrer';
+    // Collapse form after submit
+    if (toggleFormBtn && voyageFormWrap) {
+      toggleFormBtn.setAttribute("aria-expanded", "false");
+      voyageFormWrap.setAttribute("aria-hidden", "true");
+      const onEnd = () => { voyageFormWrap.hidden = true; voyageFormWrap.removeEventListener("transitionend", onEnd); };
+      voyageFormWrap.addEventListener("transitionend", onEnd);
+    }
   } catch (error) {
     console.error("Erreur d'enregistrement: ", error);
     showNotification("Erreur lors de l'enregistrement", "error");
@@ -664,121 +669,108 @@ function validateVoyage(v) {
   return errs;
 }
 
-// Chargement initial des données
-// Plus besoin de chargement initial; onSnapshot est la source de vérité
+// HTML escape helper
+const escapeHTML = (s) => {
+  if (s == null) return "";
+  return String(s)
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#039;");
+};
 
-// Rendu du tableau (version corrigée avec délégation d'événements)
+// Date format for table cells
+const formatDate = (date) => {
+  const d = asDate(date);
+  return d && !isNaN(d)
+    ? d.toLocaleString("fr-FR", { day: "2-digit", month: "2-digit", year: "numeric", hour: "2-digit", minute: "2-digit" })
+    : "—";
+};
+
+// Render a slice of data into the table (used by pagination)
 function renderTable(data) {
   voyagesTable.innerHTML = "";
 
-  const escapeHTML = (s) => {
-    if (s == null) return "";
-    return String(s)
-      .replace(/&/g, "&amp;")
-      .replace(/</g, "&lt;")
-      .replace(/>/g, "&gt;")
-      .replace(/"/g, "&quot;")
-      .replace(/'/g, "&#039;");
-  };
+  if (!data.length) {
+    const tr = document.createElement("tr");
+    tr.innerHTML = `<td colspan="22" class="empty-state"><i class="fas fa-inbox"></i><p>Aucun voyage trouvé</p></td>`;
+    voyagesTable.appendChild(tr);
+    return;
+  }
 
   data.forEach((voyage) => {
+    const isIncomplete = isVoyageIncomplete(voyage);
     const row = document.createElement("tr");
+    if (isIncomplete && voyage.statut !== "annule") row.classList.add("row-incomplete");
 
-    // Calcul des métriques de performance (basé seulement sur carburant départ)
-    const departFuel =
-      typeof voyage.carburantDepart === "number" ? voyage.carburantDepart : 0;
-    const efficiency =
-      departFuel > 0 && (voyage.distance || 0) > 0
-        ? ((voyage.distance || 0) / departFuel).toFixed(2)
-        : "N/A";
-
-    // Formatage des dates
-    const formatDate = (date) => {
-      const d = asDate(date);
-      return d && !isNaN(d)
-        ? d.toLocaleString("fr-FR", {
-            day: "2-digit",
-            month: "2-digit",
-            year: "numeric",
-            hour: "2-digit",
-            minute: "2-digit",
-          })
-        : "N/A";
-    };
+    const departFuel = typeof voyage.carburantDepart === "number" ? voyage.carburantDepart : 0;
+    const efficiency = departFuel > 0 && (voyage.distance || 0) > 0
+      ? ((voyage.distance || 0) / departFuel).toFixed(2) : "N/A";
 
     const destDisplay = (() => {
       const city = escapeHTML(voyage.destination || "");
       const detail = escapeHTML(voyage.destinationDetail || "");
-      return detail ? `${city} - ${detail}` : city;
+      return detail ? `${city}<br><small style="color:var(--gray)">${detail}</small>` : city;
+    })();
+
+    const positioningCell = (() => {
+      const dt = formatDate(voyage.containerPositioningDate);
+      const loc = escapeHTML(voyage.containerPositioningLocation || "");
+      return dt !== "—" ? `${dt}${loc ? `<br><small style="color:var(--gray)">${loc}</small>` : ""}` : (loc || "—");
     })();
 
     row.innerHTML = `
-      <td>${escapeHTML(voyage.chauffeur || "")}</td>
+      <td><strong>${escapeHTML(voyage.chauffeur || "")}</strong></td>
       <td>${escapeHTML(voyage.camion || "")}</td>
-  <td>${escapeHTML(voyage.numeroOrdreTransport || "")}</td>
-      <td>${escapeHTML(voyage.societe || "KIS")}</td>
-      <td>${escapeHTML(voyage.villeDepart || "")}</td>
-  <td>${destDisplay}</td>
-  <td>${escapeHTML(voyage.client || "")}</td>
-  <td>${escapeHTML(voyage.natureMarchandise || "")}</td>
-            <td>${formatDate(voyage.dateDepart)}</td>
-            <td>${formatDate(voyage.clientArrivalTime)}</td>
-            <td>${formatDate(voyage.clientDepartureTime)}</td>
-            <td>${formatDate(voyage.kribiArrivalDate)}</td>
-            <td>
-                ${formatDate(voyage.containerPositioningDate)}<br>
-        ${escapeHTML(voyage.containerPositioningLocation)}
-            </td>
-        <td>${escapeHTML(voyage.numeroConteneur || "")}</td>
-        <td>${escapeHTML(voyage.numeroPlomb || "")}</td>
-            <td>${voyage.distance ?? 0} km</td>
-            <td>${voyage.carburantDepart ?? 0} L</td>
-            <td class="${getPerformanceClass(efficiency)}">
-                ${getPerformanceIcon(efficiency)} ${efficiency} km/L
-            </td>
-      <td>${escapeHTML(voyage.documentation || "")}</td>
-      <td>${escapeHTML(voyage.incidents || "Aucun")}</td>
-            <td>${getStatusBadge(voyage.statut)} ${getIncompleteBadge(
-      voyage
-    )}</td>
-            <td>
-                <button class="btn-edit" data-id="${voyage.id}">
-                    <i class="fas fa-edit"></i> Modifier
-                </button>
-                <button class="btn-delete" data-id="${voyage.id}">
-                    <i class="fas fa-trash"></i> Supprimer
-                </button>
-            </td>
-        `;
+      <td><code style="font-size:0.85em">${escapeHTML(voyage.numeroOrdreTransport || "—")}</code></td>
+      <td><span class="status-badge ${voyage.societe === 'UTA' ? 'info' : 'primary'}" style="font-size:0.78em">${escapeHTML(voyage.societe || "KIS")}</span></td>
+      <td>${escapeHTML(voyage.villeDepart || "—")}</td>
+      <td>${destDisplay}</td>
+      <td>${escapeHTML(voyage.client || "—")}</td>
+      <td style="max-width:140px;white-space:normal;font-size:0.88em">${escapeHTML(voyage.natureMarchandise || "—")}</td>
+      <td style="white-space:nowrap">${formatDate(voyage.dateDepart)}</td>
+      <td style="white-space:nowrap">${formatDate(voyage.clientArrivalTime)}</td>
+      <td style="white-space:nowrap">${formatDate(voyage.clientDepartureTime)}</td>
+      <td style="white-space:nowrap">${formatDate(voyage.kribiArrivalDate)}</td>
+      <td>${positioningCell}</td>
+      <td><code style="font-size:0.85em">${escapeHTML(voyage.numeroConteneur || "—")}</code></td>
+      <td><code style="font-size:0.85em">${escapeHTML(voyage.numeroPlomb || "—")}</code></td>
+      <td style="text-align:right;white-space:nowrap"><strong>${voyage.distance != null ? voyage.distance : 0}</strong> km</td>
+      <td style="text-align:right;white-space:nowrap">${voyage.carburantDepart != null ? voyage.carburantDepart : 0} L</td>
+      <td class="${getPerformanceClass(efficiency)}" style="white-space:nowrap">${getPerformanceIcon(efficiency)} ${efficiency === "N/A" ? "N/A" : efficiency + " km/L"}</td>
+      <td style="max-width:160px;white-space:normal;font-size:0.85em">${escapeHTML(voyage.documentation || "—")}</td>
+      <td style="max-width:160px;white-space:normal;font-size:0.85em">${escapeHTML(voyage.incidents || "—")}</td>
+      <td>${getStatusBadge(voyage.statut)} ${isIncomplete && voyage.statut !== "annule" ? '<span class="status-badge warning" style="margin-left:4px;font-size:0.75em">Incomplet</span>' : ''}</td>
+      <td style="white-space:nowrap">
+        <button class="btn-edit" data-id="${voyage.id}" style="display:${canEdit ? 'inline-flex' : 'none'}"><i class="fas fa-edit"></i></button>
+        <button class="btn-delete" data-id="${voyage.id}" style="display:${canEdit ? 'inline-flex' : 'none'}"><i class="fas fa-trash"></i></button>
+      </td>`;
 
     voyagesTable.appendChild(row);
   });
 
-  // Hide or show action buttons based on role
-  document.querySelectorAll(".btn-edit, .btn-delete").forEach((btn) => {
-    btn.style.display = canEdit ? "inline-flex" : "none";
-  });
-  // Ensure the table scroll starts at the left edge after render
-  const container = document.querySelector(".table-container");
-  if (container) container.scrollLeft = 0;
+  // Apply column visibility
+  applyColumnVisibility();
+}
 
-  // Apply column visibility based on toggles (1-based indexes)
+function isVoyageIncomplete(v) {
+  return !(asDate(v.clientArrivalTime) && asDate(v.clientDepartureTime) && asDate(v.kribiArrivalDate) && asDate(v.containerPositioningDate));
+}
+
+function applyColumnVisibility() {
   const table = document.getElementById("voyagesTable");
-  if (table) {
-    const showPerf = togglePerformance?.checked !== false;
-    const showDocs = toggleDocs?.checked !== false;
-    const showInc = toggleIncidents?.checked !== false;
-    const hideShow = (i, show) => {
-      table
-        .querySelectorAll(`thead th:nth-child(${i}), tbody td:nth-child(${i})`)
-        .forEach((cell) => (cell.style.display = show ? "" : "none"));
-    };
-    // After adding Ville départ, Client, Nature, N° conteneur, N° plomb
-    // Performance=18, Documentation=19, Incidents=20
-    hideShow(18, showPerf);
-    hideShow(19, showDocs);
-    hideShow(20, showInc);
-  }
+  if (!table) return;
+  const showPerf = togglePerformance?.checked !== false;
+  const showDocs = toggleDocs?.checked !== false;
+  const showInc = toggleIncidents?.checked !== false;
+  const hideShow = (i, show) => {
+    table.querySelectorAll(`thead th:nth-child(${i}), tbody td:nth-child(${i})`)
+      .forEach((cell) => (cell.style.display = show ? "" : "none"));
+  };
+  hideShow(18, showPerf);
+  hideShow(19, showDocs);
+  hideShow(20, showInc);
 }
 
 // Fonction pour les badges de statut
@@ -829,14 +821,30 @@ function getIncompleteBadge(v) {
 
 // Calcul des statistiques
 function calculateStats() {
-  // Comptage des voyages
-  voyageCountSpan.textContent = `${allVoyages.length} voyages`;
+  // Dashboard KPI cards
+  const now = new Date();
+  const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
+  const tripsThisMonth = allVoyages.filter(v => {
+    const d = asDate(v.dateDepart);
+    return d && d >= monthStart;
+  }).length;
+  const incompleteCount = allVoyages.filter(v => isVoyageIncomplete(v) && v.statut !== "annule").length;
+  const tripsThisMonthEl = document.getElementById("trips-this-month");
+  const incompleteCountEl = document.getElementById("incomplete-count");
+  if (tripsThisMonthEl) tripsThisMonthEl.textContent = tripsThisMonth;
+  if (incompleteCountEl) incompleteCountEl.textContent = incompleteCount;
 
-  // Calcul de l'efficacité moyenne
+  // Summary bar
+  const vis = filteredVoyages.length;
+  voyageCountSpan.textContent = vis === allVoyages.length
+    ? `${allVoyages.length} voyages`
+    : `${vis} / ${allVoyages.length} voyages`;
+
+  // Average efficiency over currently filtered set
   let totalEfficiency = 0;
   let count = 0;
 
-  allVoyages.forEach((voyage) => {
+  filteredVoyages.forEach((voyage) => {
     const dep =
       typeof voyage.carburantDepart === "number" ? voyage.carburantDepart : 0;
     if (dep > 0 && (voyage.distance || 0) > 0) {
@@ -1000,7 +1008,9 @@ if (toggleFiltersBtn && filtersWrap) {
 function applyFilters() {
   const now = new Date();
   const term = (searchInput.value || "").toLowerCase();
-  let filtered = allVoyages.filter((v) => {
+
+  // 1. Filter
+  let result = allVoyages.filter((v) => {
     const matchesSearch =
       !term ||
       (v.chauffeur || "").toLowerCase().includes(term) ||
@@ -1010,29 +1020,30 @@ function applyFilters() {
       (v.client || "").toLowerCase().includes(term) ||
       (v.documentation || "").toLowerCase().includes(term) ||
       (v.containerPositioningLocation || "").toLowerCase().includes(term) ||
+      (v.natureMarchandise || "").toLowerCase().includes(term) ||
+      (v.numeroConteneur || "").toLowerCase().includes(term) ||
+      (v.numeroPlomb || "").toLowerCase().includes(term) ||
+      (v.numeroOrdreTransport || "").toLowerCase().includes(term) ||
       (v.societe || "").toLowerCase().includes(term);
 
     const companyOk =
-      companyFilter.value === "all" ||
-      (v.societe || "KIS") === companyFilter.value;
+      companyFilter.value === "all" || (v.societe || "KIS") === companyFilter.value;
     const statusOk =
       statusFilter.value === "all" || v.statut === statusFilter.value;
 
     let timeOk = true;
     const d = asDate(v.dateDepart);
     if (timeFilter.value === "today") {
-      const todayStart = new Date(now);
-      todayStart.setHours(0, 0, 0, 0);
-      timeOk = d ? d >= todayStart : false;
+      const s = new Date(now); s.setHours(0, 0, 0, 0);
+      timeOk = d ? d >= s : false;
     } else if (timeFilter.value === "week") {
-      const weekStart = new Date(now);
-      const day = weekStart.getDay() || 7; // Monday as 1
-      weekStart.setDate(weekStart.getDate() - (day - 1));
-      weekStart.setHours(0, 0, 0, 0);
-      timeOk = d ? d >= weekStart : false;
+      const s = new Date(now);
+      const day = s.getDay() || 7;
+      s.setDate(s.getDate() - (day - 1)); s.setHours(0, 0, 0, 0);
+      timeOk = d ? d >= s : false;
     } else if (timeFilter.value === "month") {
-      const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
-      timeOk = d ? d >= monthStart : false;
+      const s = new Date(now.getFullYear(), now.getMonth(), 1);
+      timeOk = d ? d >= s : false;
     } else if (timeFilter.value === "custom") {
       const s = timeStartDate?.value ? new Date(timeStartDate.value) : null;
       const e = timeEndDate?.value ? new Date(timeEndDate.value) : null;
@@ -1041,70 +1052,159 @@ function applyFilters() {
       timeOk = d ? (!s || d >= s) && (!e || d <= e) : false;
     }
 
-    // Incomplete-only logic: end-of-journey fields missing
-    const d2 = asDate(v.clientArrivalTime);
-    const d3 = asDate(v.clientDepartureTime);
-    const d4 = asDate(v.kribiArrivalDate);
-    const d5 = asDate(v.containerPositioningDate);
-    const missingEndData = !(d2 && d3 && d4 && d5);
-
-    const incompleteOk = !incompleteOnly?.checked || missingEndData;
+    const incompleteOk = !incompleteOnly?.checked || isVoyageIncomplete(v);
 
     return matchesSearch && companyOk && statusOk && timeOk && incompleteOk;
   });
 
-  renderTable(filtered);
+  // 2. Sort
+  const field = currentSortField;
+  result.sort((a, b) => {
+    let va, vb;
+    if (field === "performance") {
+      va = efficiencyOf(a) ?? -Infinity;
+      vb = efficiencyOf(b) ?? -Infinity;
+    } else {
+      va = a[field];
+      vb = b[field];
+    }
+    const da = asDate(va);
+    const db = asDate(vb);
+    let cmp;
+    if (da || db) {
+      cmp = (da ? da.getTime() : 0) - (db ? db.getTime() : 0);
+    } else if (typeof va === "number" || typeof vb === "number") {
+      cmp = (va ?? 0) - (vb ?? 0);
+    } else {
+      const sa = (va ?? "").toString().toLowerCase();
+      const sb = (vb ?? "").toString().toLowerCase();
+      cmp = sa < sb ? -1 : sa > sb ? 1 : 0;
+    }
+    return currentSortAsc ? cmp : -cmp;
+  });
+
+  filteredVoyages = result;
+
+  // Update sort indicators in table header
+  document.querySelectorAll("#voyagesTable th[data-sort]").forEach(th => {
+    th.classList.remove("sort-asc", "sort-desc");
+    if (th.dataset.sort === field) {
+      th.classList.add(currentSortAsc ? "sort-asc" : "sort-desc");
+    }
+  });
+
+  // Reset to page 1 on filter change (but not when just re-rendering)
+  currentPage = 1;
+  renderPage();
+  calculateStats();
 }
 
-// Tri des données
+// Render current page from filteredVoyages
+function renderPage() {
+  const total = filteredVoyages.length;
+  const size = pageSize > 0 ? pageSize : total;
+  const pages = size > 0 ? Math.max(1, Math.ceil(total / size)) : 1;
+  currentPage = Math.min(currentPage, pages);
+  const start = (currentPage - 1) * size;
+  const slice = size > 0 ? filteredVoyages.slice(start, start + size) : filteredVoyages;
+
+  renderTable(slice);
+  renderPagination(total, size, pages);
+}
+
+function renderPagination(total, size, pages) {
+  const bar = document.getElementById("paginationBar");
+  const info = document.getElementById("paginationInfo");
+  const ctrl = document.getElementById("paginationControls");
+  if (!bar || !info || !ctrl) return;
+
+  bar.style.display = total === 0 ? "none" : "flex";
+  const start = size > 0 ? (currentPage - 1) * size + 1 : 1;
+  const end = size > 0 ? Math.min(currentPage * size, total) : total;
+  info.textContent = `Affichage ${start}–${end} sur ${total}`;
+
+  ctrl.innerHTML = "";
+  if (pages <= 1) return;
+
+  const addBtn = (label, page, active = false, disabled = false) => {
+    const btn = document.createElement("button");
+    btn.innerHTML = label;
+    btn.title = `Page ${page}`;
+    if (active) btn.classList.add("active");
+    btn.disabled = disabled;
+    btn.addEventListener("click", () => { currentPage = page; renderPage(); });
+    ctrl.appendChild(btn);
+  };
+
+  addBtn("&laquo;", 1, false, currentPage === 1);
+  addBtn("&lsaquo;", currentPage - 1, false, currentPage === 1);
+
+  // Page number buttons (show up to 5 around current)
+  const radius = 2;
+  let lo = Math.max(1, currentPage - radius);
+  let hi = Math.min(pages, currentPage + radius);
+  if (currentPage - radius < 1) hi = Math.min(pages, hi + (radius - currentPage + 1));
+  if (currentPage + radius > pages) lo = Math.max(1, lo - (currentPage + radius - pages));
+
+  if (lo > 1) { addBtn("1", 1); if (lo > 2) { const ellipsis = document.createElement("span"); ellipsis.textContent = "…"; ellipsis.style.padding = "0 4px"; ctrl.appendChild(ellipsis); } }
+  for (let p = lo; p <= hi; p++) addBtn(String(p), p, p === currentPage);
+  if (hi < pages) { if (hi < pages - 1) { const ellipsis = document.createElement("span"); ellipsis.textContent = "…"; ellipsis.style.padding = "0 4px"; ctrl.appendChild(ellipsis); } addBtn(String(pages), pages); }
+
+  addBtn("&rsaquo;", currentPage + 1, false, currentPage === pages);
+  addBtn("&raquo;", pages, false, currentPage === pages);
+}
+
+// Tri via dropdown
 filterSelect.addEventListener("change", () => {
-  if (filterSelect.value === "performance") {
-    sortByPerformance();
-  } else {
-    currentSortField = filterSelect.value;
-    sortData();
-  }
+  currentSortField = filterSelect.value === "performance" ? "performance" : filterSelect.value;
+  currentSortAsc = false;
+  applyFilters();
 });
 
-// Fonction de tri standard
-function sortData() {
-  const ascending = currentSortField === lastSortField ? !isAscending : true;
-  const sorted = [...allVoyages].sort((a, b) => {
-    let valA = a[currentSortField];
-    let valB = b[currentSortField];
-
-    // Pour les dates
-    const dA = asDate(valA);
-    const dB = asDate(valB);
-    if (dA || dB) {
-      const tA = dA ? dA.getTime() : 0;
-      const tB = dB ? dB.getTime() : 0;
-      return ascending ? tA - tB : tB - tA;
+// Column header click sorting
+const voyagesTableEl = document.getElementById("voyagesTable");
+if (voyagesTableEl) {
+  voyagesTableEl.querySelector("thead").addEventListener("click", (e) => {
+    const th = e.target.closest("th[data-sort]");
+    if (!th) return;
+    const field = th.dataset.sort;
+    if (field === currentSortField) {
+      currentSortAsc = !currentSortAsc;
+    } else {
+      currentSortField = field;
+      currentSortAsc = true;
     }
-
-    if (typeof valA === "string") valA = valA.toLowerCase();
-    if (typeof valB === "string") valB = valB.toLowerCase();
-
-    if (valA < valB) return ascending ? -1 : 1;
-    if (valA > valB) return ascending ? 1 : -1;
-    return 0;
+    // Sync dropdown if it has this field
+    if (filterSelect.querySelector(`option[value="${field}"]`)) {
+      filterSelect.value = field;
+    }
+    applyFilters();
+    persistFilters();
   });
-
-  renderTable(sorted);
-  isAscending = ascending;
-  lastSortField = currentSortField;
 }
 
-// Tri par performance
-function sortByPerformance() {
-  const sorted = [...allVoyages].sort((a, b) => {
-    const ea = efficiencyOf(a) || 0;
-    const eb = efficiencyOf(b) || 0;
-    return eb - ea;
+// Page size selector
+const pageSizeSelect = document.getElementById("pageSizeSelect");
+if (pageSizeSelect) {
+  pageSizeSelect.addEventListener("change", () => {
+    pageSize = parseInt(pageSizeSelect.value, 10);
+    currentPage = 1;
+    renderPage();
   });
-
-  renderTable(sorted);
 }
+
+// Client autocomplete — build from existing voyage data
+function updateClientDatalist() {
+  const datalist = document.getElementById("clientList");
+  if (!datalist) return;
+  const clients = [...new Set(allVoyages.map(v => v.client).filter(Boolean))].sort();
+  datalist.innerHTML = clients.map(c => `<option value="${escapeHTML(c)}">`).join("");
+}
+
+// Fonction de tri standard (legacy stub)
+function sortData() { applyFilters(); }
+// Tri par performance (legacy stub)
+function sortByPerformance() { currentSortField = "performance"; currentSortAsc = false; applyFilters(); }
 
 // Modification d'un voyage
 async function editVoyage(id) {
@@ -1157,7 +1257,13 @@ async function editVoyage(id) {
       editingId = id;
       if (submitBtn)
         submitBtn.innerHTML = '<i class="fas fa-save"></i> Mettre à jour';
-      showNotification("Voyage chargé pour modification", "info");
+      showNotification("Voyage chargé pour modification — faites vos changements puis Enregistrer", "info");
+      // Auto-open form and scroll to it
+      if (toggleFormBtn && voyageFormWrap) {
+        toggleFormBtn.setAttribute("aria-expanded", "true");
+        voyageFormWrap.hidden = false;
+        requestAnimationFrame(() => voyageFormWrap.setAttribute("aria-hidden", "false"));
+      }
       window.scrollTo({ top: 0, behavior: "smooth" });
     }
   } catch (error) {
@@ -1346,77 +1452,10 @@ function formatDateForPDF(date) {
   });
 }
 
-// ---------------- Helpers for PDF Export -----------------
+// ---------------- Helpers for PDF/Excel Export -----------------
+// Re-use the already-computed filteredVoyages for exports (no double-filtering)
 function computeFilteredVoyages() {
-  const now = new Date();
-  const term = (searchInput.value || "").toLowerCase();
-  let filtered = allVoyages.filter((v) => {
-    const matchesSearch =
-      !term ||
-      (v.chauffeur || "").toLowerCase().includes(term) ||
-      (v.camion || "").toLowerCase().includes(term) ||
-      (v.destination || "").toLowerCase().includes(term) ||
-      (v.destinationDetail || "").toLowerCase().includes(term) ||
-      (v.natureMarchandise || "").toLowerCase().includes(term) ||
-      (v.numeroConteneur || "").toLowerCase().includes(term) ||
-      (v.numeroPlomb || "").toLowerCase().includes(term) ||
-      (v.documentation || "").toLowerCase().includes(term) ||
-      (v.containerPositioningLocation || "").toLowerCase().includes(term) ||
-      (v.societe || "").toLowerCase().includes(term);
-
-    const companyOk =
-      companyFilter.value === "all" ||
-      (v.societe || "KIS") === companyFilter.value;
-    const statusOk =
-      statusFilter.value === "all" || v.statut === statusFilter.value;
-
-    let timeOk = true;
-    const d = asDate(v.dateDepart);
-    if (timeFilter.value === "today") {
-      const todayStart = new Date(now);
-      todayStart.setHours(0, 0, 0, 0);
-      timeOk = d ? d >= todayStart : false;
-    } else if (timeFilter.value === "week") {
-      const weekStart = new Date(now);
-      const day = weekStart.getDay() || 7; // Monday as 1
-      weekStart.setDate(weekStart.getDate() - (day - 1));
-      weekStart.setHours(0, 0, 0, 0);
-      timeOk = d ? d >= weekStart : false;
-    } else if (timeFilter.value === "month") {
-      const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
-      timeOk = d ? d >= monthStart : false;
-    } else if (timeFilter.value === "custom") {
-      const s = timeStartDate?.value ? new Date(timeStartDate.value) : null;
-      const e = timeEndDate?.value ? new Date(timeEndDate.value) : null;
-      if (s) s.setHours(0, 0, 0, 0);
-      if (e) e.setHours(23, 59, 59, 999);
-      timeOk = d ? (!s || d >= s) && (!e || d <= e) : false;
-    }
-
-    return matchesSearch && companyOk && statusOk && timeOk;
-  });
-
-  // Sort by current sort
-  const field = filterSelect.value;
-  if (field === "performance") {
-    filtered.sort((a, b) => {
-      const ea = efficiencyOf(a) || 0;
-      const eb = efficiencyOf(b) || 0;
-      return eb - ea;
-    });
-  } else {
-    filtered.sort((a, b) => {
-      const va = a[field];
-      const vb = b[field];
-      const da = asDate(va);
-      const dbt = asDate(vb);
-      if (da || dbt) return (dbt?.getTime() || 0) - (da?.getTime() || 0);
-      if ((va || "") < (vb || "")) return -1;
-      if ((va || "") > (vb || "")) return 1;
-      return 0;
-    });
-  }
-  return filtered;
+  return filteredVoyages;
 }
 
 function sum(arr, sel) {
@@ -2117,7 +2156,7 @@ function subscribeVoyages() {
       allVoyages = snapshot.docs.map((d) => ({ id: d.id, ...d.data() }));
       // Render and stats via existing helpers
       applyFilters();
-      calculateStats();
+      updateClientDatalist();
       // Update last update date
       if (lastUpdateSpan) {
         const now = new Date();
@@ -2179,27 +2218,7 @@ if (voyagesTable) {
   });
 }
 
-// Analytics button
-if (openAnalyticsBtn) {
-  openAnalyticsBtn.addEventListener("click", () => {
-    try {
-      window.location.href = "analytics.html";
-    } catch {
-      /* ignore */
-    }
-  });
-}
-
-// Open pre-alertes tracking page
-if (openPreAlertesBtn) {
-  openPreAlertesBtn.addEventListener("click", () => {
-    try {
-      window.location.href = "pre-alertes.html";
-    } catch {
-      /* ignore */
-    }
-  });
-}
+// Navigation is handled via <a> links in the header nav
 
 // Safety: hide loader after 6s even if snapshots fail
 setTimeout(() => {

@@ -91,13 +91,30 @@
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
   </head>
   <body>
+    <header>
+      <div class="header-container">
+        <div class="logo-header">
+          <div class="dual-logo">
+            <div class="logo-box"><img src="img/logo.jpg" alt="Logo KIS" class="logo" /></div>
+            <div class="logo-box"><img src="img/uta-logo.jpg" alt="Logo UTA" class="logo" /></div>
+          </div>
+          <div>
+            <h1>Kribi Inland Services & United Transport Africa</h1>
+            <h3>Rapport par chauffeur</h3>
+          </div>
+        </div>
+        <div class="nav-links">
+          <a href="index.html"><i class="fas fa-home"></i> Accueil</a>
+          <a href="pre-alertes.html"><i class="fas fa-bell"></i> Pré-alertes</a>
+          <a href="driver-report.html" class="active"><i class="fas fa-id-card"></i> Chauffeurs</a>
+          <a href="analytics.html"><i class="fas fa-chart-line"></i> Analytiques</a>
+        </div>
+      </div>
+    </header>
     <main class="container">
       <div class="table-header" style="margin-bottom: 12px">
-        <h2><i class="fas fa-id-card"></i> Rapport chauffeur</h2>
+        <h2 style="margin-bottom:0"><i class="fas fa-id-card"></i> Rapport chauffeur</h2>
         <div class="toolbar">
-          <a class="btn-export" href="index.html"
-            ><i class="fas fa-arrow-left"></i> Retour</a
-          >
           <button id="exportExcelDriver" class="btn-export">
             <i class="fas fa-file-excel"></i> Export Excel
           </button>
@@ -225,7 +242,31 @@
         </div>
       </section>
     </main>
-
+    <footer>
+      <div class="footer-container">
+        <div class="footer-logo">
+          <div class="dual-logo-small">
+            <img src="img/logo.jpg" alt="Logo KIS" class="logo-small" />
+            <img src="img/uta-logo.jpg" alt="Logo UTA" class="logo-small" />
+          </div>
+          <div>
+            <h3>Kribi Inland Services & UTA Cameroun SA</h3>
+            <p>Services de transport et logistique</p>
+          </div>
+        </div>
+        <div class="footer-contact">
+          <p><i class="fas fa-map-marker-alt"></i> Kribi, Cameroun</p>
+          <p><i class="fas fa-phone"></i> 657 60 08 55 / 681 23 33 07</p>
+          <p><i class="fas fa-envelope"></i> alain.tchio@kis-kribi.org</p>
+        </div>
+        <div class="footer-info">
+          <p>Responsable: TCHIO NGOUMO ALAIN</p>
+          <p>Fonction: Agent Logistique</p>
+          <p>&copy; <span id="footerYear"></span> KIS/UTA. Tous droits réservés.</p>
+        </div>
+      </div>
+    </footer>
+    <script>document.getElementById('footerYear').textContent = new Date().getFullYear();</script>
     <script src="driver-report.js"></script>
   </body>
 </html>
