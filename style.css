@@ -941,7 +941,15 @@ section.charts-grid, section.dashboard-grid {
   margin-bottom: 0;
 }
 
-.table-section  { padding: 20px 22px; }
+.table-section, .form-section  { padding: 20px 22px; }
+
+.form-section-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 16px;
+}
 .controls-section {
   padding: 14px 18px;
   background: var(--surface-2);
