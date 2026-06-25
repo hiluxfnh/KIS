@@ -9,7 +9,9 @@ const firebaseConfig = {
 };
 
 // Initialisation Firebase
-firebase.initializeApp(firebaseConfig);
+try {
+  if (!firebase.apps?.length) firebase.initializeApp(firebaseConfig);
+} catch {}
 const db = firebase.firestore();
 const auth = firebase.auth();
 // Enable offline persistence (best effort)
@@ -1566,13 +1568,9 @@ function addFooter(doc) {
 
 // Export PDF (professional multi-section report)
 async function loadJsPDF() {
-  if (window.jspdf && window.jspdf.jsPDF) return window.jspdf;
-  await import(
-    "https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"
-  );
-  await import(
-    "https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.25/jspdf.plugin.autotable.min.js"
-  );
+  if (window.jspdf?.jsPDF) return window.jspdf;
+  await loadScriptOnce("https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js");
+  await loadScriptOnce("https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.25/jspdf.plugin.autotable.min.js");
   return window.jspdf;
 }
 
