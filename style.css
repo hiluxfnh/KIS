@@ -282,9 +282,31 @@ h2 {
 
 h2 i { font-size: 1em; opacity: 0.8; }
 
+/* Tighten headings inside panels */
+.form-section h2, .table-section h2 {
+  margin-bottom: var(--sp-5);
+}
+
+/* h3 in chart cards and elsewhere */
+h3 {
+  color: var(--primary);
+  font-size: 1rem;
+  font-weight: 700;
+}
+
 /* ============================================================
    STATS CARDS
    ============================================================ */
+
+/* Grid-wrapper sections don't get card styling */
+section.dashboard, section.kpis, section.kpi-grid,
+section.charts-grid, section.dashboard-grid {
+  background: transparent;
+  border: none;
+  box-shadow: none;
+  padding: 0;
+}
+
 .dashboard {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
@@ -422,8 +444,6 @@ h2 i { font-size: 1em; opacity: 0.8; }
 .controls-section {
   padding: var(--sp-4) var(--sp-6);
   background: var(--surface-2);
-  border-bottom: 1px solid var(--border);
-  border-radius: var(--r-lg) var(--r-lg) 0 0;
   display: flex;
   flex-direction: column;
   gap: var(--sp-4);
@@ -896,10 +916,11 @@ tbody tr.row-incomplete td:first-child {
   box-shadow: var(--shadow-md);
   opacity: 0;
   transform: translateX(110%);
-  animation: notifSlideIn 0.28s cubic-bezier(0.22,1,0.36,1) forwards,
-             notifFadeOut 0.28s ease forwards 2.7s;
+  animation: notifSlideIn 0.28s cubic-bezier(0.22,1,0.36,1) forwards;
+  transition: opacity 0.3s ease, transform 0.3s ease;
   min-width: 220px;
   border: 1px solid rgba(0,0,0,0.06);
+  cursor: pointer;
 }
 
 .notification.success { background: #dcfce7; color: #15803d; }
@@ -938,12 +959,18 @@ tbody tr.row-incomplete td:first-child {
   inset: 0;
   background: rgba(15,23,42,0.55);
   backdrop-filter: blur(2px);
+}
+
+/* Center content via padding + flex on modal-content wrapper when open */
+.modal[style*="block"],
+.modal[style*="flex"] {
+  display: flex !important;
   align-items: center;
   justify-content: center;
 }
 
-.modal[style*="block"] {
-  display: flex !important;
+.modal-content {
+  margin: auto;
 }
 
 .modal-content {
@@ -1023,6 +1050,17 @@ tbody tr.row-incomplete td:first-child {
 }
 
 @keyframes spin { to { transform: rotate(360deg); } }
+
+/* ============================================================
+   PAGE TITLE STRIP
+   ============================================================ */
+.page-title {
+  margin-bottom: var(--sp-5);
+  padding-bottom: var(--sp-4);
+  border-bottom: 1px solid var(--border);
+}
+.page-title h2 { font-size: 1.4rem; margin-bottom: 2px; }
+.page-title p { color: var(--text-muted); font-size: 0.88rem; }
 
 /* ============================================================
    MISC UTILITIES
@@ -1280,5 +1318,3 @@ footer {
 input[type=number]::-webkit-inner-spin-button,
 input[type=number]::-webkit-outer-spin-button { opacity: 0.4; }
 
-/* Fix modal display fallback */
-.modal { display: none; }

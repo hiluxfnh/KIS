@@ -15,13 +15,20 @@ try { db.enablePersistence?.().catch(() => {}); } catch {}
 const preCol = db.collection("prealertes");
 
 function notify(msg, type = "info") {
-  const bgMap = { success: "#28a745", error: "#dc3545", warning: "#e09800", info: "#2c5aa0" };
+  let c = document.getElementById("notification-container");
+  if (!c) {
+    c = document.createElement("div");
+    c.id = "notification-container";
+    c.setAttribute("aria-live", "polite");
+    document.body.appendChild(c);
+  }
   const n = document.createElement("div");
-  n.style.cssText = `position:fixed;top:16px;right:16px;z-index:9999;background:${bgMap[type] || bgMap.info};color:#fff;padding:11px 16px;border-radius:8px;font-weight:600;font-size:0.92rem;box-shadow:0 4px 14px rgba(0,0,0,.18);cursor:pointer;max-width:340px;`;
+  n.className = `notification ${type}`;
   n.textContent = msg;
   n.addEventListener("click", () => n.remove());
-  document.body.appendChild(n);
-  setTimeout(() => n.remove(), 4500);
+  c.appendChild(n);
+  const dur = type === "error" ? 5000 : 4000;
+  setTimeout(() => { n.style.opacity = "0"; setTimeout(() => n.remove(), 300); }, dur);
 }
 
 // DOM
