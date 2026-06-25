@@ -1051,6 +1051,9 @@ tbody tr.row-incomplete td:first-child {
 
 @keyframes spin { to { transform: rotate(360deg); } }
 
+/* Full-width utility */
+.btn-full-width { width: 100%; justify-content: center; }
+
 /* ============================================================
    PAGE TITLE STRIP
    ============================================================ */
