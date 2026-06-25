@@ -9,7 +9,9 @@ const firebaseConfig = {
 };
 
 // Initialisation Firebase
-firebase.initializeApp(firebaseConfig);
+try {
+  if (!firebase.apps?.length) firebase.initializeApp(firebaseConfig);
+} catch {}
 const db = firebase.firestore();
 const auth = firebase.auth();
 // Enable offline persistence (best effort)
@@ -48,39 +50,26 @@ function maybeHideLoader() {
 // Simple notification helper (non-blocking toast)
 function showNotification(message, type = "info") {
   try {
-    const containerId = "notification-container";
-    let container = document.getElementById(containerId);
+    let container = document.getElementById("notification-container");
     if (!container) {
       container = document.createElement("div");
-      container.id = containerId;
-      container.style.cssText = "position:fixed;top:16px;right:16px;z-index:9999;display:flex;flex-direction:column;gap:8px;";
+      container.id = "notification-container";
       container.setAttribute("aria-live", "polite");
       container.setAttribute("role", "status");
       document.body.appendChild(container);
     }
-    const bgMap = { success: "#28a745", error: "#dc3545", warning: "#e09800", info: "#2c5aa0" };
     const note = document.createElement("div");
     note.className = `notification ${type}`;
-    note.style.cssText = `background:${bgMap[type]||bgMap.info};color:#fff;padding:11px 16px;border-radius:8px;font-weight:600;font-size:0.92rem;box-shadow:0 4px 14px rgba(0,0,0,0.18);display:flex;align-items:center;gap:8px;min-width:220px;max-width:380px;opacity:0;transform:translateX(20px);transition:all 0.25s ease;cursor:pointer;`;
-    const iconMap = { success: "✓", error: "⚠", warning: "!", info: "ℹ" };
-    const iconSpan = document.createElement("span");
-    iconSpan.style.cssText = "font-size:1em;flex-shrink:0;font-weight:900;";
-    iconSpan.textContent = iconMap[type] || "ℹ";
     const textSpan = document.createElement("span");
     textSpan.textContent = message;
-    note.appendChild(iconSpan);
     note.appendChild(textSpan);
     note.addEventListener("click", () => note.remove());
     container.appendChild(note);
-    requestAnimationFrame(() => {
-      note.style.opacity = "1";
-      note.style.transform = "translateX(0)";
-    });
     const dur = type === "error" ? 5000 : 3200;
     setTimeout(() => {
       note.style.opacity = "0";
-      note.style.transform = "translateX(20px)";
-      setTimeout(() => note.remove(), 280);
+      note.style.transform = "translateX(10%)";
+      setTimeout(() => note.remove(), 300);
     }, dur);
   } catch (e) {
     console.log((type || "INFO").toUpperCase() + ": " + message);
@@ -1566,13 +1555,9 @@ function addFooter(doc) {
 
 // Export PDF (professional multi-section report)
 async function loadJsPDF() {
-  if (window.jspdf && window.jspdf.jsPDF) return window.jspdf;
-  await import(
-    "https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"
-  );
-  await import(
-    "https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.25/jspdf.plugin.autotable.min.js"
-  );
+  if (window.jspdf?.jsPDF) return window.jspdf;
+  await loadScriptOnce("https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js");
+  await loadScriptOnce("https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.25/jspdf.plugin.autotable.min.js");
   return window.jspdf;
 }
 

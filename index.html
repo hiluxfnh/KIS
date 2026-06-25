@@ -40,31 +40,33 @@
             <h3>Suivi des camions et chauffeurs</h3>
           </div>
         </div>
-        <div style="display:flex;flex-direction:column;align-items:flex-end;gap:8px;">
-          <div class="nav-links">
-            <a href="pre-alertes.html" title="Tableau de suivi des pré-alertes">
-              <i class="fas fa-bell"></i> Pré-alertes
-            </a>
-            <a href="analytics.html" title="Tableau de bord analytique">
-              <i class="fas fa-chart-line"></i> Analytiques
-            </a>
-            <a href="driver-report.html" title="Rapport par chauffeur">
-              <i class="fas fa-id-card"></i> Chauffeurs
-            </a>
+        <nav id="navLinks" class="nav-links">
+          <a href="pre-alertes.html" title="Tableau de suivi des pré-alertes">
+            <i class="fas fa-bell"></i> Pré-alertes
+          </a>
+          <a href="analytics.html" title="Tableau de bord analytique">
+            <i class="fas fa-chart-line"></i> Analytiques
+          </a>
+          <a href="driver-report.html" title="Rapport par chauffeur">
+            <i class="fas fa-id-card"></i> Chauffeurs
+          </a>
+        </nav>
+        <div class="user-info">
+          <div class="user-details">
+            <span class="user-name" id="userName">Invité</span>
+            <span class="user-role" id="userRole">Lecture seule</span>
           </div>
-          <div class="user-info">
-            <div class="user-details">
-              <span class="user-name" id="userName">Invité</span>
-              <span class="user-role" id="userRole">Lecture seule</span>
-            </div>
-            <button id="loginBtn" class="btn-export" title="Se connecter">
-              <i class="fas fa-sign-in-alt"></i> Connexion
-            </button>
-            <button id="logoutBtn" class="btn-export" title="Se déconnecter" style="display:none">
-              <i class="fas fa-sign-out-alt"></i> Déconnexion
-            </button>
-          </div>
+          <button id="loginBtn" class="btn-export" title="Se connecter">
+            <i class="fas fa-sign-in-alt"></i> Connexion
+          </button>
+          <button id="logoutBtn" class="btn-export" title="Se déconnecter" style="display:none">
+            <i class="fas fa-sign-out-alt"></i> Déconnexion
+          </button>
         </div>
+        <button class="nav-toggle" aria-label="Ouvrir le menu" aria-expanded="false"
+          onclick="var e=this.getAttribute('aria-expanded')==='true';this.setAttribute('aria-expanded',String(!e));document.getElementById('navLinks').classList.toggle('open',!e)">
+          <span></span><span></span><span></span>
+        </button>
       </div>
     </header>
 
@@ -86,12 +88,12 @@
           </div>
           <span id="active-trucks-uta">0</span>
         </div>
-        <div class="stats-card" style="border-left-color:var(--success)">
+        <div class="stats-card success">
           <div class="card-header">
-            <i class="fas fa-route" style="color:var(--success)"></i>
+            <i class="fas fa-route"></i>
             <h3>Voyages ce mois</h3>
           </div>
-          <span id="trips-this-month" style="color:var(--success)">0</span>
+          <span id="trips-this-month">0</span>
         </div>
         <div class="stats-card danger">
           <div class="card-header">
@@ -132,7 +134,7 @@
               <i class="fas fa-sign-in-alt"></i> Se connecter
             </button>
           </div>
-          <p id="authError" style="color: #dc3545; display: none"></p>
+          <p id="authError" style="color:var(--danger);display:none;font-size:0.88rem;margin-top:4px"></p>
         </div>
       </div>
 
@@ -152,6 +154,10 @@
         <div id="voyageFormWrap" class="collapse" hidden>
           <form id="voyageForm">
             <div class="form-grid">
+              <!-- ── Identification du voyage ── -->
+              <div class="form-group-section">
+                <i class="fas fa-id-badge"></i> Identification du voyage
+              </div>
               <div class="form-group">
                 <label for="societe">
                   <i class="fas fa-building"></i> Société
@@ -185,6 +191,10 @@
                 <input type="text" id="camion" required />
               </div>
 
+              <!-- ── Itinéraire & Marchandise ── -->
+              <div class="form-group-section">
+                <i class="fas fa-route"></i> Itinéraire &amp; Marchandise
+              </div>
               <div class="form-group">
                 <label for="destination"
                   ><i class="fas fa-map-marker-alt"></i> Destination</label
@@ -265,6 +275,10 @@
                 >
               </div>
 
+              <!-- ── Chronologie du voyage ── -->
+              <div class="form-group-section">
+                <i class="fas fa-clock"></i> Chronologie du voyage
+              </div>
               <div class="form-group">
                 <label for="dateDepart"
                   ><i class="fas fa-calendar-alt"></i> Date départ</label
@@ -324,6 +338,10 @@
                 >
               </div>
 
+              <!-- ── Conteneur, Documents & Statut ── -->
+              <div class="form-group-section">
+                <i class="fas fa-file-contract"></i> Conteneur, Documents &amp; Statut
+              </div>
               <div class="form-group">
                 <label for="numeroConteneur"
                   ><i class="fas fa-box"></i> Numéro de conteneur</label

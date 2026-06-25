@@ -10,81 +10,126 @@
       href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"
     />
     <style>
+      /* Driver report local styles */
       .driver-controls {
         padding: 16px 20px;
-        background: var(--light-blue);
-        border-radius: 12px;
-        margin-bottom: 18px;
+        background: var(--surface-2);
+        border-radius: var(--r-lg);
+        margin-bottom: 20px;
         display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
         gap: 12px;
+        border: 1px solid var(--border);
       }
+
+      .driver-controls label { font-size: 0.82rem; color: var(--text-muted); margin-bottom: 4px; }
+      .driver-controls input, .driver-controls select { padding: 9px 12px; font-size: 0.88rem; }
+
       .kpi-grid {
         display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-        gap: 16px;
-        margin-bottom: 20px;
+        grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+        gap: 14px;
+        margin-bottom: 22px;
       }
+
       .kpi {
-        background: #fff;
-        border-radius: 12px;
-        padding: 14px 16px;
-        box-shadow: 0 3px 10px rgba(0, 0, 0, 0.05);
-        border-left: 3px solid var(--secondary);
+        background: var(--surface);
+        border-radius: var(--r-lg);
+        padding: 16px 18px;
+        box-shadow: var(--shadow-sm);
+        border: 1px solid var(--border);
+        position: relative;
+        overflow: hidden;
       }
+
+      .kpi::before {
+        content: '';
+        position: absolute;
+        top: 0; left: 0;
+        width: 100%; height: 3px;
+        background: var(--secondary);
+        border-radius: var(--r-lg) var(--r-lg) 0 0;
+      }
+
       .kpi h4 {
-        font-size: 0.9rem;
-        color: var(--dark);
-        margin: 0 0 6px 0;
+        font-size: 0.75rem;
+        font-weight: 600;
+        color: var(--text-muted);
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+        margin: 0 0 8px 0;
       }
+
       .kpi .val {
-        font-size: 1.4rem;
-        font-weight: 700;
+        font-size: 1.8rem;
+        font-weight: 800;
         color: var(--primary);
+        line-height: 1.1;
+        letter-spacing: -0.02em;
       }
+
       .charts-grid {
         display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-        gap: 20px;
+        grid-template-columns: repeat(auto-fit, minmax(290px, 1fr));
+        gap: 18px;
+        margin-bottom: 22px;
       }
+
       .chart-card {
-        background: #fff;
-        border-radius: 12px;
-        padding: 16px;
-        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+        background: var(--surface);
+        border-radius: var(--r-lg);
+        padding: 18px 20px;
+        box-shadow: var(--shadow-sm);
+        border: 1px solid var(--border);
       }
+
       .chart-card h3 {
-        margin-bottom: 10px;
+        margin-bottom: 14px;
         color: var(--primary);
+        font-size: 0.95rem;
+        font-weight: 700;
         display: flex;
         align-items: center;
         gap: 8px;
       }
+
       .toolbar {
         display: flex;
         gap: 10px;
         flex-wrap: wrap;
       }
-      .toolbar .btn-export {
-        background: var(--secondary);
-      }
+
       table.driver-table {
         width: 100%;
         border-collapse: separate;
         border-spacing: 0;
+        font-size: 0.88rem;
+        min-width: 700px;
       }
+
       table.driver-table th {
         background: var(--primary);
         color: #fff;
         text-align: left;
-        padding: 10px;
+        padding: 10px 12px;
         position: sticky;
         top: 0;
+        font-weight: 600;
+        font-size: 0.8rem;
+        letter-spacing: 0.02em;
+        white-space: nowrap;
       }
+
       table.driver-table td {
-        border-bottom: 1px solid #e1e7ed;
-        padding: 10px;
+        border-bottom: 1px solid var(--border);
+        padding: 10px 12px;
+        vertical-align: middle;
       }
+
+      table.driver-table tbody tr:hover { background: #eef4ff; }
+      table.driver-table tbody tr:nth-child(even) { background: #fafbfd; }
+      table.driver-table tbody tr:nth-child(even):hover { background: #eef4ff; }
+      table.driver-table tbody tr:last-child td { border-bottom: none; }
     </style>
     <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-firestore-compat.js"></script>
@@ -103,17 +148,21 @@
             <h3>Rapport par chauffeur</h3>
           </div>
         </div>
-        <div class="nav-links">
+        <nav id="navLinks" class="nav-links">
           <a href="index.html"><i class="fas fa-home"></i> Accueil</a>
           <a href="pre-alertes.html"><i class="fas fa-bell"></i> Pré-alertes</a>
           <a href="driver-report.html" class="active"><i class="fas fa-id-card"></i> Chauffeurs</a>
           <a href="analytics.html"><i class="fas fa-chart-line"></i> Analytiques</a>
-        </div>
+        </nav>
+        <button class="nav-toggle" aria-label="Ouvrir le menu" aria-expanded="false"
+          onclick="var e=this.getAttribute('aria-expanded')==='true';this.setAttribute('aria-expanded',String(!e));document.getElementById('navLinks').classList.toggle('open',!e)">
+          <span></span><span></span><span></span>
+        </button>
       </div>
     </header>
     <main class="container">
-      <div class="table-header" style="margin-bottom: 12px">
-        <h2 style="margin-bottom:0"><i class="fas fa-id-card"></i> Rapport chauffeur</h2>
+      <div class="table-header">
+        <h2><i class="fas fa-id-card"></i> Rapport chauffeur</h2>
         <div class="toolbar">
           <button id="exportExcelDriver" class="btn-export">
             <i class="fas fa-file-excel"></i> Export Excel
@@ -173,7 +222,7 @@
         </div>
         <div>
           <label>&nbsp;</label>
-          <button id="applyFilters" class="btn-export" style="width: 100%">
+          <button id="applyFilters" class="btn-export btn-full-width">
             <i class="fas fa-filter"></i> Appliquer
           </button>
         </div>
@@ -199,6 +248,10 @@
         <div class="kpi">
           <h4>Durée totale</h4>
           <div class="val" id="kpiHours">0 h</div>
+        </div>
+        <div class="kpi">
+          <h4>Incidents</h4>
+          <div class="val" id="kpiIncidents">0</div>
         </div>
       </section>
 

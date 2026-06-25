@@ -1,5 +1,4 @@
 // Pré-alertes tracking page
-// Firebase init
 const firebaseConfig = {
   apiKey: "AIzaSyCxxnPeqbmzRy0Ku9gDMzSjSKmjpCRz8gE",
   authDomain: "kis-transport-tracking.firebaseapp.com",
@@ -12,10 +11,25 @@ try {
   if (!firebase.apps?.length) firebase.initializeApp(firebaseConfig);
 } catch {}
 const db = firebase.firestore();
-try {
-  db.enablePersistence?.().catch(() => {});
-} catch {}
+try { db.enablePersistence?.().catch(() => {}); } catch {}
 const preCol = db.collection("prealertes");
+
+function notify(msg, type = "info") {
+  let c = document.getElementById("notification-container");
+  if (!c) {
+    c = document.createElement("div");
+    c.id = "notification-container";
+    c.setAttribute("aria-live", "polite");
+    document.body.appendChild(c);
+  }
+  const n = document.createElement("div");
+  n.className = `notification ${type}`;
+  n.textContent = msg;
+  n.addEventListener("click", () => n.remove());
+  c.appendChild(n);
+  const dur = type === "error" ? 5000 : 4000;
+  setTimeout(() => { n.style.opacity = "0"; setTimeout(() => n.remove(), 300); }, dur);
+}
 
 // DOM
 const el = (id) => document.getElementById(id);
@@ -244,24 +258,35 @@ preForm.addEventListener("submit", async (e) => {
     comments: preComments.value.trim(),
     createdAt: firebase.firestore.FieldValue.serverTimestamp(),
   };
-  const err = validatePreAlerte(item);
-  if (err) {
-    alert(err);
+  const validErr = validatePreAlerte(item);
+  if (validErr) {
+    notify(validErr, "warning");
     return;
   }
   try {
     if (editingId) {
       await preCol.doc(editingId).update(item);
+      notify("Pré-alerte mise à jour", "success");
       const btn = preForm.querySelector('button[type="submit"]');
       if (btn) btn.innerHTML = '<i class="fas fa-save"></i> Enregistrer';
       editingId = null;
     } else {
       await preCol.add(item);
+      notify("Pré-alerte enregistrée", "success");
     }
     preForm.reset();
-    renderAfterRefetch();
-  } catch (err) {
-    alert("Erreur enregistrement: " + (err?.message || err));
+    // Restore today's date for next entry
+    try {
+      const now = new Date();
+      preReceived.value = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,"0")}-${String(now.getDate()).padStart(2,"0")}`;
+    } catch {}
+    // Collapse form
+    if (togglePreForm && preFormWrap) {
+      togglePreForm.setAttribute("aria-expanded", "false");
+      preFormWrap.setAttribute("aria-hidden", "true");
+    }
+  } catch (saveErr) {
+    notify("Erreur enregistrement: " + (saveErr?.message || saveErr), "error");
   }
 });
 
@@ -337,21 +362,35 @@ function wire() {
     });
 }
 
-async function renderAfterRefetch() {
-  const snap = await preCol.get();
-  all = snap.docs.map((d) => ({ id: d.id, ...d.data() }));
-  // Populate client suggestions
+function updateClientSuggestions() {
   try {
     if (preClientList) {
-      const clients = Array.from(
-        new Set(all.map((x) => (x.client || "").trim()).filter(Boolean))
-      ).sort((a, b) => a.localeCompare(b, "fr"));
-      preClientList.innerHTML = clients
-        .map((c) => `<option value="${c.replace(/"/g, "&quot;")}"></option>`)
-        .join("");
+      const clients = Array.from(new Set(all.map((x) => (x.client || "").trim()).filter(Boolean))).sort((a, b) => a.localeCompare(b, "fr"));
+      preClientList.innerHTML = clients.map((c) => `<option value="${c.replace(/"/g, "&quot;")}"></option>`).join("");
     }
   } catch {}
-  render();
+}
+
+function subscribePreAlertes() {
+  try {
+    preCol.orderBy("createdAt", "desc").onSnapshot(
+      (snap) => {
+        all = snap.docs.map((d) => ({ id: d.id, ...d.data() }));
+        updateClientSuggestions();
+        render();
+      },
+      (err) => {
+        console.warn("orderBy failed, fallback:", err?.code);
+        preCol.onSnapshot(
+          (snap) => { all = snap.docs.map((d) => ({ id: d.id, ...d.data() })); updateClientSuggestions(); render(); },
+          (e2) => { console.error("Snapshot error:", e2); notify("Erreur de chargement des données", "error"); }
+        );
+      }
+    );
+  } catch (e) {
+    console.error("subscribePreAlertes() failed:", e);
+    notify("Erreur de connexion Firebase", "error");
+  }
 }
 
 // Excel export (filtered)
@@ -420,14 +459,15 @@ async function exportExcel() {
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, ws, "Pré-alertes");
     XLSX.writeFile(wb, "pre_alertes.xlsx");
+    notify("Export Excel réussi", "success");
   } catch (e) {
-    alert("Erreur export Excel: " + (e?.message || e));
+    notify("Erreur export Excel: " + (e?.message || e), "error");
   }
 }
 
 // Initial load
 (async function init() {
-  await renderAfterRefetch();
+  subscribePreAlertes();
   wire();
   // Prefill today's date for reception for convenience
   try {
@@ -534,9 +574,9 @@ async function deletePreAlerte(id) {
   if (!confirm("Supprimer cette pré-alerte ?")) return;
   try {
     await preCol.doc(id).delete();
-    await renderAfterRefetch();
+    notify("Pré-alerte supprimée", "success");
   } catch (e) {
-    alert("Erreur suppression: " + (e?.message || e));
+    notify("Erreur suppression: " + (e?.message || e), "error");
   }
 }
 
@@ -820,7 +860,8 @@ async function exportPDF() {
     } catch {}
 
     doc.save("pre_alertes.pdf");
+    notify("Export PDF réussi", "success");
   } catch (e) {
-    alert("Erreur export PDF: " + (e?.message || e));
+    notify("Erreur export PDF: " + (e?.message || e), "error");
   }
 }
