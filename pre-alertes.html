@@ -27,12 +27,16 @@
             <h3>Réception, documents, retrait port, livraison</h3>
           </div>
         </div>
-        <div class="nav-links">
+        <nav id="navLinks" class="nav-links">
           <a href="index.html"><i class="fas fa-home"></i> Accueil</a>
           <a href="pre-alertes.html" class="active"><i class="fas fa-bell"></i> Pré-alertes</a>
           <a href="driver-report.html"><i class="fas fa-id-card"></i> Chauffeurs</a>
           <a href="analytics.html"><i class="fas fa-chart-line"></i> Analytiques</a>
-        </div>
+        </nav>
+        <button class="nav-toggle" aria-label="Ouvrir le menu" aria-expanded="false"
+          onclick="var e=this.getAttribute('aria-expanded')==='true';this.setAttribute('aria-expanded',String(!e));document.getElementById('navLinks').classList.toggle('open',!e)">
+          <span></span><span></span><span></span>
+        </button>
       </div>
     </header>
 

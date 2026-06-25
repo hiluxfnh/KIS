@@ -10,66 +10,114 @@
       href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"
     />
     <style>
+      /* Analytics page local styles — modernized to match design system */
       .controls {
         display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
         gap: 12px;
-        background: var(--light-blue);
+        background: var(--surface-2);
         padding: 16px 20px;
-        border-radius: 12px;
-        margin-bottom: 16px;
+        border-radius: var(--r-lg);
+        margin-bottom: 20px;
+        border: 1px solid var(--border);
       }
+
+      .controls label { font-size: 0.82rem; color: var(--text-muted); margin-bottom: 4px; }
+      .controls input, .controls select { padding: 9px 12px; font-size: 0.88rem; }
+
       .kpis {
         display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
         gap: 14px;
-        margin-bottom: 18px;
+        margin-bottom: 22px;
       }
+
       .kpi {
-        background: #fff;
-        border-radius: 12px;
-        padding: 14px 16px;
-        border-left: 3px solid var(--secondary);
-        box-shadow: 0 3px 10px rgba(0, 0, 0, 0.05);
+        background: var(--surface);
+        border-radius: var(--r-lg);
+        padding: 16px 18px;
+        border: 1px solid var(--border);
+        box-shadow: var(--shadow-sm);
+        position: relative;
+        overflow: hidden;
       }
+
+      .kpi::before {
+        content: '';
+        position: absolute;
+        top: 0; left: 0;
+        width: 100%; height: 3px;
+        background: var(--secondary);
+        border-radius: var(--r-lg) var(--r-lg) 0 0;
+      }
+
       .kpi h4 {
-        margin: 0 0 6px;
-        font-size: 0.9rem;
-        color: var(--dark);
+        margin: 0 0 8px;
+        font-size: 0.75rem;
+        font-weight: 600;
+        color: var(--text-muted);
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
       }
+
       .kpi .val {
-        font-size: 1.4rem;
-        font-weight: 700;
+        font-size: 1.8rem;
+        font-weight: 800;
         color: var(--primary);
+        line-height: 1.1;
+        letter-spacing: -0.02em;
       }
+
       .dashboard-grid {
         display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
-        gap: 20px;
+        grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+        gap: 18px;
       }
+
       .card {
-        background: #fff;
-        border-radius: 12px;
-        padding: 16px;
-        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+        background: var(--surface);
+        border-radius: var(--r-lg);
+        padding: 18px 20px;
+        box-shadow: var(--shadow-sm);
+        border: 1px solid var(--border);
       }
+
       .card h3 {
-        margin-bottom: 10px;
+        margin-bottom: 14px;
         color: var(--primary);
+        font-size: 0.95rem;
+        font-weight: 700;
         display: flex;
         align-items: center;
         gap: 8px;
       }
+
       .top-list {
         list-style: none;
         padding: 0;
         margin: 0;
       }
+
       .top-list li {
         display: flex;
         justify-content: space-between;
+        align-items: center;
         padding: 8px 0;
-        border-bottom: 1px solid #eee;
+        border-bottom: 1px solid var(--border);
+        font-size: 0.88rem;
+        gap: 8px;
+      }
+
+      .top-list li:last-child { border-bottom: none; }
+
+      .top-list li span:last-child {
+        font-weight: 700;
+        color: var(--primary);
+        background: var(--light-blue);
+        padding: 2px 8px;
+        border-radius: var(--r-full);
+        font-size: 0.8rem;
+        flex-shrink: 0;
       }
     </style>
     <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-app-compat.js"></script>
@@ -89,12 +137,16 @@
             <h3>Tableau de bord analytique</h3>
           </div>
         </div>
-        <div class="nav-links">
+        <nav id="navLinks" class="nav-links">
           <a href="index.html"><i class="fas fa-home"></i> Accueil</a>
           <a href="pre-alertes.html"><i class="fas fa-bell"></i> Pré-alertes</a>
           <a href="driver-report.html"><i class="fas fa-id-card"></i> Chauffeurs</a>
           <a href="analytics.html" class="active"><i class="fas fa-chart-line"></i> Analytiques</a>
-        </div>
+        </nav>
+        <button class="nav-toggle" aria-label="Ouvrir le menu" aria-expanded="false"
+          onclick="var e=this.getAttribute('aria-expanded')==='true';this.setAttribute('aria-expanded',String(!e));document.getElementById('navLinks').classList.toggle('open',!e)">
+          <span></span><span></span><span></span>
+        </button>
       </div>
     </header>
     <main class="container">
