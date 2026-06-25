@@ -307,25 +307,34 @@ function initDates() {
 // ---------------- Authentication & Role-based UI -----------------
 function updateUIForRole() {
   try {
+    // Hide/show add-voyage buttons (topbar + bottom nav)
+    const addVoyageBtn = document.getElementById("addVoyageBtn");
+    const bottomAddBtn = document.getElementById("bottomAddBtn");
+    if (addVoyageBtn) addVoyageBtn.style.display = canEdit ? "inline-flex" : "none";
+    if (bottomAddBtn) bottomAddBtn.style.display = canEdit ? "flex" : "none";
+
+    // Legacy form section (if present)
     const formSection = document.querySelector(".form-section");
     if (formSection) {
-      // Completely hide the whole add-voyage section for view-only users
       formSection.style.display = canEdit ? "block" : "none";
     }
-    // Hide edit action buttons in the table
+
+    // Hide edit/delete action buttons in the table & cards
     document.querySelectorAll(".btn-edit, .btn-delete").forEach((btn) => {
       btn.style.display = canEdit ? "inline-flex" : "none";
     });
+
     // Hide trucks edit icons when view-only
     if (editTrucksBtnKIS)
       editTrucksBtnKIS.style.display = canEdit ? "inline" : "none";
     if (editTrucksBtnUTA)
       editTrucksBtnUTA.style.display = canEdit ? "inline" : "none";
-    // Toggle visibility of login/logout buttons
+
+    // Toggle visibility of login/logout buttons (sidebar + old header)
     if (loginBtn)
-      loginBtn.style.display = auth.currentUser ? "none" : "inline-flex";
+      loginBtn.style.display = auth.currentUser ? "none" : "flex";
     if (logoutBtn)
-      logoutBtn.style.display = auth.currentUser ? "inline-flex" : "none";
+      logoutBtn.style.display = auth.currentUser ? "flex" : "none";
   } catch (e) {
     /* noop */
   }
@@ -824,9 +833,12 @@ function calculateStats() {
 
   // Summary bar
   const vis = filteredVoyages.length;
-  voyageCountSpan.textContent = vis === allVoyages.length
+  const countLabel = vis === allVoyages.length
     ? `${allVoyages.length} voyages`
     : `${vis} / ${allVoyages.length} voyages`;
+  if (voyageCountSpan) voyageCountSpan.textContent = countLabel;
+  const voyageCountCard = document.getElementById("voyageCountCard");
+  if (voyageCountCard) voyageCountCard.textContent = countLabel;
 
   // Average efficiency over currently filtered set
   let totalEfficiency = 0;
@@ -842,7 +854,10 @@ function calculateStats() {
   });
 
   const avgEff = count > 0 ? (totalEfficiency / count).toFixed(2) : 0;
-  avgEfficiencySpan.textContent = `Efficacité: ${avgEff} km/L`;
+  const effLabel = `Efficacité: ${avgEff} km/L`;
+  if (avgEfficiencySpan) avgEfficiencySpan.textContent = effLabel;
+  const avgEffCard = document.getElementById("avgEfficiencyCard");
+  if (avgEffCard) avgEffCard.textContent = effLabel;
 
   // Statistiques par chauffeur
   driverStats = {};
@@ -1096,8 +1111,134 @@ function renderPage() {
   const start = (currentPage - 1) * size;
   const slice = size > 0 ? filteredVoyages.slice(start, start + size) : filteredVoyages;
 
-  renderTable(slice);
+  // Detect active view (cards vs table)
+  const view = (typeof currentView !== 'undefined' ? currentView : null) ||
+               localStorage.getItem('kis:view') || 'cards';
+
+  if (view === 'table') {
+    renderTable(slice);
+  } else {
+    renderCards(slice);
+  }
+
   renderPagination(total, size, pages);
+}
+
+// Render trip cards
+function renderCards(data) {
+  const grid = document.getElementById("tripsCardView");
+  if (!grid) return;
+  grid.innerHTML = "";
+
+  if (!data.length) {
+    grid.innerHTML = `
+      <div class="empty-state" style="grid-column:1/-1;padding:60px 20px;background:var(--surface);border-radius:var(--r-lg);border:1px solid var(--border)">
+        <i class="fas fa-inbox"></i>
+        <p>Aucun voyage trouvé</p>
+      </div>`;
+    return;
+  }
+
+  const statusMap = {
+    'complet':  { label: 'Complet',  cls: 'success', icon: 'fa-check-circle' },
+    'en-cours': { label: 'En cours', cls: 'warning', icon: 'fa-clock' },
+    'retard':   { label: 'Retard',   cls: 'danger',  icon: 'fa-exclamation-circle' },
+    'annule':   { label: 'Annulé',   cls: 'secondary',icon: 'fa-ban' },
+  };
+
+  data.forEach(voyage => {
+    const st = statusMap[voyage.statut] || { label: voyage.statut || '—', cls: 'secondary', icon: 'fa-circle' };
+    const isIncomplete = isVoyageIncomplete(voyage) && voyage.statut !== 'annule';
+
+    const dep = typeof voyage.carburantDepart === 'number' ? voyage.carburantDepart : 0;
+    const efficiency = dep > 0 && (voyage.distance || 0) > 0
+      ? ((voyage.distance || 0) / dep).toFixed(1)
+      : null;
+
+    const fromCity = escapeHTML(voyage.villeDepart || 'Kribi');
+    const toCity   = escapeHTML(voyage.destination || '—');
+    const toDetail = voyage.destinationDetail ? `<small style="color:var(--text-muted);font-size:0.82em"> · ${escapeHTML(voyage.destinationDetail)}</small>` : '';
+
+    const dateStr = (() => {
+      const d = asDate(voyage.dateDepart);
+      return d ? d.toLocaleDateString('fr-FR', { day: '2-digit', month: 'short', year: 'numeric' }) : '—';
+    })();
+
+    const companyCls = voyage.societe === 'UTA' ? 'info' : 'primary';
+
+    const perfHTML = efficiency
+      ? `<div class="trip-card-meta-item"><i class="fas fa-bolt"></i><strong class="${getPerformanceClass(efficiency)}">${efficiency} km/L</strong></div>`
+      : '';
+
+    const distHTML = voyage.distance
+      ? `<div class="trip-card-meta-item"><i class="fas fa-road"></i><strong>${voyage.distance} km</strong></div>`
+      : '';
+
+    const incompleteTag = isIncomplete
+      ? `<span class="status-badge warning" style="margin-left:4px;font-size:0.68rem">Incomplet</span>`
+      : '';
+
+    const editBtn = canEdit
+      ? `<button class="btn-edit" data-id="${voyage.id}" title="Modifier"><i class="fas fa-edit"></i></button>`
+      : '';
+    const delBtn = canEdit
+      ? `<button class="btn-delete" data-id="${voyage.id}" title="Supprimer"><i class="fas fa-trash"></i></button>`
+      : '';
+
+    const numeroOT = voyage.numeroOrdreTransport
+      ? `<span style="font-size:0.72rem;color:var(--text-muted);font-family:monospace">${escapeHTML(voyage.numeroOrdreTransport)}</span>`
+      : '';
+
+    const card = document.createElement('article');
+    card.className = `trip-card status-${voyage.statut || 'unknown'}`;
+    card.innerHTML = `
+      <div class="trip-card-accent"></div>
+      <div class="trip-card-body">
+        <div class="trip-card-top">
+          <span class="status-badge ${st.cls}"><i class="fas ${st.icon}" style="margin-right:4px;font-size:0.7em"></i>${st.label}</span>
+          <span class="status-badge ${companyCls}">${escapeHTML(voyage.societe || 'KIS')}</span>
+          ${incompleteTag}
+          <span class="trip-card-date">${dateStr}</span>
+        </div>
+        <div class="trip-card-route">
+          <span class="route-from">${fromCity}</span>
+          <span class="route-arrow"><i class="fas fa-long-arrow-alt-right"></i></span>
+          <span class="route-to">${toCity}${toDetail}</span>
+        </div>
+        <div class="trip-card-driver">
+          <i class="fas fa-user" style="font-size:0.75rem"></i>
+          <strong>${escapeHTML(voyage.chauffeur || '—')}</strong>
+          <span class="driver-sep">·</span>
+          <i class="fas fa-truck" style="font-size:0.75rem"></i>
+          ${escapeHTML(voyage.camion || '—')}
+          ${numeroOT ? `<span class="driver-sep">·</span>${numeroOT}` : ''}
+        </div>
+        <div class="trip-card-meta">
+          ${distHTML}
+          ${perfHTML}
+          ${voyage.natureMarchandise ? `<div class="trip-card-meta-item"><i class="fas fa-cubes"></i>${escapeHTML(voyage.natureMarchandise.substring(0,30))}${voyage.natureMarchandise.length > 30 ? '…' : ''}</div>` : ''}
+        </div>
+      </div>
+      <div class="trip-card-footer">
+        <div class="trip-card-client">
+          <i class="fas fa-user-tie" style="font-size:0.75rem;flex-shrink:0"></i>
+          <span>${escapeHTML(voyage.client || 'Client non renseigné')}</span>
+        </div>
+        <div class="trip-card-actions">
+          ${editBtn}${delBtn}
+        </div>
+      </div>`;
+
+    // Edit / delete event delegation on the card
+    card.querySelectorAll('.btn-edit').forEach(btn => {
+      btn.addEventListener('click', e => { e.stopPropagation(); editVoyage(btn.dataset.id); });
+    });
+    card.querySelectorAll('.btn-delete').forEach(btn => {
+      btn.addEventListener('click', e => { e.stopPropagation(); deleteVoyage(btn.dataset.id); });
+    });
+
+    grid.appendChild(card);
+  });
 }
 
 function renderPagination(total, size, pages) {
@@ -1246,8 +1387,10 @@ async function editVoyage(id) {
       if (submitBtn)
         submitBtn.innerHTML = '<i class="fas fa-save"></i> Mettre à jour';
       showNotification("Voyage chargé pour modification — faites vos changements puis Enregistrer", "info");
-      // Auto-open form and scroll to it
-      if (toggleFormBtn && voyageFormWrap) {
+      // Open slide panel for editing
+      if (typeof window.openVoyagePanel === 'function') {
+        window.openVoyagePanel(true);
+      } else if (toggleFormBtn && voyageFormWrap) {
         toggleFormBtn.setAttribute("aria-expanded", "true");
         voyageFormWrap.hidden = false;
         requestAnimationFrame(() => voyageFormWrap.setAttribute("aria-hidden", "false"));

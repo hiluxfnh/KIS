@@ -3,386 +3,479 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Suivi Camions - KIS/UTA</title>
+    <title>Suivi Transport — KIS/UTA</title>
     <link rel="stylesheet" href="style.css" />
-    <link
-      rel="stylesheet"
-      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"
-    />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
   </head>
   <body>
-    <!-- App Loader -->
-    <div
-      id="app-loader"
-      class="loader-overlay"
-      aria-live="polite"
-      aria-busy="true"
-    >
+
+    <!-- ====== LOADER ====== -->
+    <div id="app-loader" class="loader-overlay" aria-live="polite" aria-busy="true">
       <div class="loader-card">
         <div class="spinner" aria-hidden="true"></div>
         <div class="loader-text">Chargement…</div>
       </div>
     </div>
 
-    <header>
-      <div class="header-container">
-        <div class="logo-header">
-          <div class="dual-logo">
-            <div class="logo-box">
-              <img src="img/logo.jpg" alt="Logo KIS" class="logo" />
-            </div>
-            <div class="logo-box">
-              <img src="img/uta-logo.jpg" alt="Logo UTA" class="logo" />
-            </div>
-          </div>
-          <div>
-            <h1>Kribi Inland Services & United Transport Africa</h1>
-            <h3>Suivi des camions et chauffeurs</h3>
+    <!-- ====== SIDEBAR ====== -->
+    <aside class="sidebar" id="sidebar">
+      <div class="sidebar-logo">
+        <div class="sidebar-logos">
+          <img src="img/logo.jpg" alt="KIS" class="sidebar-logo-img" />
+          <img src="img/uta-logo.jpg" alt="UTA" class="sidebar-logo-img" />
+        </div>
+        <div class="sidebar-brand-text">
+          <span class="sidebar-brand-name">KIS / UTA</span>
+          <span class="sidebar-brand-sub">Suivi Transport</span>
+        </div>
+      </div>
+
+      <nav class="sidebar-nav">
+        <div class="sidebar-section-label">Navigation</div>
+        <a href="index.html" class="sidebar-link active">
+          <i class="fas fa-home"></i>
+          <span>Tableau de bord</span>
+        </a>
+        <a href="pre-alertes.html" class="sidebar-link">
+          <i class="fas fa-bell"></i>
+          <span>Pré-alertes</span>
+        </a>
+        <a href="analytics.html" class="sidebar-link">
+          <i class="fas fa-chart-line"></i>
+          <span>Analytiques</span>
+        </a>
+        <a href="driver-report.html" class="sidebar-link">
+          <i class="fas fa-id-card"></i>
+          <span>Chauffeurs</span>
+        </a>
+      </nav>
+
+      <div class="sidebar-footer">
+        <div class="sidebar-user" id="sidebarUser">
+          <i class="fas fa-user-circle"></i>
+          <div class="sidebar-user-details">
+            <span class="sidebar-user-name" id="userName">Invité</span>
+            <span class="sidebar-user-role" id="userRole">Lecture seule</span>
           </div>
         </div>
-        <nav id="navLinks" class="nav-links">
-          <a href="pre-alertes.html" title="Tableau de suivi des pré-alertes">
-            <i class="fas fa-bell"></i> Pré-alertes
-          </a>
-          <a href="analytics.html" title="Tableau de bord analytique">
-            <i class="fas fa-chart-line"></i> Analytiques
-          </a>
-          <a href="driver-report.html" title="Rapport par chauffeur">
-            <i class="fas fa-id-card"></i> Chauffeurs
-          </a>
-        </nav>
-        <div class="user-info">
-          <div class="user-details">
-            <span class="user-name" id="userName">Invité</span>
-            <span class="user-role" id="userRole">Lecture seule</span>
-          </div>
-          <button id="loginBtn" class="btn-export" title="Se connecter">
-            <i class="fas fa-sign-in-alt"></i> Connexion
-          </button>
-          <button id="logoutBtn" class="btn-export" title="Se déconnecter" style="display:none">
-            <i class="fas fa-sign-out-alt"></i> Déconnexion
-          </button>
-        </div>
-        <button class="nav-toggle" aria-label="Ouvrir le menu" aria-expanded="false"
-          onclick="var e=this.getAttribute('aria-expanded')==='true';this.setAttribute('aria-expanded',String(!e));document.getElementById('navLinks').classList.toggle('open',!e)">
-          <span></span><span></span><span></span>
+        <button id="loginBtn" class="sidebar-auth-btn">
+          <i class="fas fa-sign-in-alt"></i> Connexion
+        </button>
+        <button id="logoutBtn" class="sidebar-auth-btn danger" style="display:none">
+          <i class="fas fa-sign-out-alt"></i> Déconnexion
         </button>
       </div>
-    </header>
+    </aside>
 
-    <main class="container">
-      <section class="dashboard">
-        <div class="stats-card kis">
-          <div class="card-header">
-            <i class="fas fa-truck"></i>
-            <h3>Camions actifs — KIS</h3>
-            <i class="fas fa-edit edit-icon" id="edit-trucks-kis"></i>
-          </div>
-          <span id="active-trucks-kis">0</span>
-        </div>
-        <div class="stats-card uta">
-          <div class="card-header">
-            <i class="fas fa-truck"></i>
-            <h3>Camions actifs — UTA</h3>
-            <i class="fas fa-edit edit-icon" id="edit-trucks-uta"></i>
-          </div>
-          <span id="active-trucks-uta">0</span>
-        </div>
-        <div class="stats-card success">
-          <div class="card-header">
-            <i class="fas fa-route"></i>
-            <h3>Voyages ce mois</h3>
-          </div>
-          <span id="trips-this-month">0</span>
-        </div>
-        <div class="stats-card danger">
-          <div class="card-header">
-            <i class="fas fa-exclamation-circle"></i>
-            <h3>Voyages incomplets</h3>
-          </div>
-          <span id="incomplete-count">0</span>
-        </div>
-      </section>
+    <!-- Sidebar overlay -->
+    <div class="sidebar-overlay" id="sidebarOverlay"></div>
 
-      <!-- Modal pour l'édition -->
-      <div id="edit-modal" class="modal">
-        <div class="modal-content">
-          <span class="close">&times;</span>
-          <h3 id="edit-trucks-title">Modifier le nombre de camions actifs</h3>
-          <input type="number" id="trucks-input" min="0" step="1" value="23" />
-          <button id="save-trucks" class="btn-submit">Enregistrer</button>
-        </div>
-      </div>
+    <!-- ====== MAIN WRAP ====== -->
+    <div class="main-wrap">
 
-      <!-- Auth Modal -->
-      <div id="auth-modal" class="modal">
-        <div class="modal-content">
-          <span class="close" data-close="auth-modal">&times;</span>
-          <h3><i class="fas fa-lock"></i> Connexion</h3>
-          <div class="form-group">
-            <label for="authEmail"><i class="fas fa-at"></i> Email</label>
-            <input type="email" id="authEmail" placeholder="vous@exemple.com" />
-          </div>
-          <div class="form-group">
-            <label for="authPassword"
-              ><i class="fas fa-key"></i> Mot de passe</label
-            >
-            <input type="password" id="authPassword" placeholder="••••••••" />
-          </div>
-          <div class="form-group">
-            <button id="authLogin" class="btn-export">
-              <i class="fas fa-sign-in-alt"></i> Se connecter
-            </button>
-          </div>
-          <p id="authError" style="color:var(--danger);display:none;font-size:0.88rem;margin-top:4px"></p>
+      <!-- Topbar -->
+      <header class="topbar">
+        <button class="topbar-menu-btn" id="sidebarToggle" aria-label="Menu">
+          <i class="fas fa-bars"></i>
+        </button>
+        <div class="topbar-title">
+          <h1><i class="fas fa-truck" style="color:var(--secondary);margin-right:6px"></i>Tableau de bord</h1>
         </div>
-      </div>
-
-      <section class="form-section">
-        <div class="form-section-header">
-          <h2><i class="fas fa-plus-circle"></i> Ajouter un voyage</h2>
-          <button
-            id="toggleFormBtn"
-            class="btn-toggle"
-            aria-expanded="false"
-            aria-controls="voyageFormWrap"
-            title="Afficher/Masquer le formulaire"
-          >
-            <i class="fas fa-chevron-down" aria-hidden="true"></i>
+        <div class="topbar-actions">
+          <button id="addVoyageBtn" class="btn-primary" style="display:none" title="Nouveau voyage">
+            <i class="fas fa-plus"></i> <span class="hide-xs">Nouveau voyage</span>
           </button>
         </div>
-        <div id="voyageFormWrap" class="collapse" hidden>
+      </header>
+
+      <!-- Page content -->
+      <main class="page-content">
+
+        <!-- Stats Cards -->
+        <div class="stats-row">
+          <div class="stats-card kis">
+            <div class="card-header">
+              <div class="stats-card-icon"><i class="fas fa-truck"></i></div>
+              <i class="fas fa-pencil-alt edit-icon" id="edit-trucks-kis" title="Modifier"></i>
+            </div>
+            <h3>Camions actifs — KIS</h3>
+            <span id="active-trucks-kis">—</span>
+          </div>
+          <div class="stats-card uta">
+            <div class="card-header">
+              <div class="stats-card-icon"><i class="fas fa-truck"></i></div>
+              <i class="fas fa-pencil-alt edit-icon" id="edit-trucks-uta" title="Modifier"></i>
+            </div>
+            <h3>Camions actifs — UTA</h3>
+            <span id="active-trucks-uta">—</span>
+          </div>
+          <div class="stats-card success">
+            <div class="card-header">
+              <div class="stats-card-icon"><i class="fas fa-route"></i></div>
+            </div>
+            <h3>Voyages ce mois</h3>
+            <span id="trips-this-month">0</span>
+          </div>
+          <div class="stats-card danger">
+            <div class="card-header">
+              <div class="stats-card-icon"><i class="fas fa-exclamation-circle"></i></div>
+            </div>
+            <h3>Voyages incomplets</h3>
+            <span id="incomplete-count">0</span>
+          </div>
+        </div>
+
+        <!-- Filter chips row -->
+        <div class="filter-chips-bar">
+          <div class="chip-group">
+            <span class="chip-label">Société</span>
+            <button class="chip active" data-company="all" onclick="setCompanyChip(this)">Toutes</button>
+            <button class="chip chip-accent" data-company="KIS" onclick="setCompanyChip(this)">KIS</button>
+            <button class="chip chip-accent" data-company="UTA" onclick="setCompanyChip(this)">UTA</button>
+          </div>
+          <div class="chip-divider"></div>
+          <div class="chip-group">
+            <span class="chip-label">Statut</span>
+            <button class="chip active" data-status="all" onclick="setStatusChip(this)">Tous</button>
+            <button class="chip chip-success" data-status="complet" onclick="setStatusChip(this)"><i class="fas fa-check"></i> Complet</button>
+            <button class="chip chip-warning" data-status="en-cours" onclick="setStatusChip(this)"><i class="fas fa-clock"></i> En cours</button>
+            <button class="chip chip-danger" data-status="retard" onclick="setStatusChip(this)"><i class="fas fa-exclamation"></i> Retard</button>
+            <button class="chip chip-secondary" data-status="annule" onclick="setStatusChip(this)">Annulé</button>
+          </div>
+        </div>
+
+        <!-- Toolbar: search + view toggle + export -->
+        <div class="toolbar-bar">
+          <div class="search-box">
+            <i class="fas fa-search"></i>
+            <input type="text" id="searchInput" placeholder="Rechercher chauffeur, camion, destination…" />
+            <button class="clear-search" onclick="document.getElementById('searchInput').value='';document.getElementById('searchInput').dispatchEvent(new Event('input'))" title="Effacer">✕</button>
+          </div>
+
+          <div class="extra-filters">
+            <select id="timeFilter" title="Période">
+              <option value="all">Toutes dates</option>
+              <option value="today">Aujourd'hui</option>
+              <option value="week">Cette semaine</option>
+              <option value="month">Ce mois</option>
+              <option value="custom">Plage…</option>
+            </select>
+            <div id="customRangeWrap" style="display:none;display:flex;gap:6px;align-items:center">
+              <input type="date" id="timeStartDate" style="min-width:130px" />
+              <span style="color:var(--text-muted)">→</span>
+              <input type="date" id="timeEndDate" style="min-width:130px" />
+            </div>
+            <select id="filterSelect" title="Trier par">
+              <option value="dateDepart">Trier: Date</option>
+              <option value="chauffeur">Trier: Chauffeur</option>
+              <option value="camion">Trier: Camion</option>
+              <option value="destination">Trier: Destination</option>
+              <option value="performance">Trier: Performance</option>
+            </select>
+            <select id="pageSizeSelect" class="page-size-select" title="Lignes par page">
+              <option value="25">25/p</option>
+              <option value="50">50/p</option>
+              <option value="100">100/p</option>
+              <option value="0">Tout</option>
+            </select>
+          </div>
+
+          <div class="toolbar-sep"></div>
+
+          <div class="view-toggle" title="Changer l'affichage">
+            <button id="viewCards" class="active" title="Vue cartes"><i class="fas fa-th-large"></i></button>
+            <button id="viewTable" title="Vue tableau"><i class="fas fa-table"></i></button>
+          </div>
+
+          <div class="toolbar-right">
+            <div class="export-buttons">
+              <button id="exportExcel" class="btn-export" title="Exporter Excel">
+                <i class="fas fa-file-excel"></i> Excel
+              </button>
+              <button id="exportPDF" class="btn-export" title="Exporter PDF">
+                <i class="fas fa-file-pdf"></i> PDF
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Hidden controls still needed by script.js -->
+        <div style="display:none">
+          <select id="companyFilter">
+            <option value="all">Toutes</option>
+            <option value="KIS">KIS</option>
+            <option value="UTA">UTA</option>
+          </select>
+          <select id="statusFilter">
+            <option value="all">Tous</option>
+            <option value="complet">Complet</option>
+            <option value="en-cours">En cours</option>
+            <option value="retard">Retard</option>
+            <option value="annule">Annulé</option>
+          </select>
+          <input type="checkbox" id="incompleteOnly" />
+          <input type="checkbox" id="togglePerformance" checked />
+          <input type="checkbox" id="toggleDocs" checked />
+          <input type="checkbox" id="toggleIncidents" checked />
+          <div id="filtersWrap" aria-hidden="false"></div>
+        </div>
+
+        <!-- Trips View (cards or table) -->
+        <div class="trips-container">
+          <!-- Card view -->
+          <div id="tripsCardView" class="trip-cards-grid"></div>
+
+          <!-- Table view (hidden by default) -->
+          <section class="table-section" id="tripsTableView" style="display:none">
+            <div class="table-header">
+              <h2><i class="fas fa-table"></i> Historique des voyages</h2>
+              <div class="summary">
+                <span id="voyageCount">0 voyages</span>
+                <span id="avgEfficiency">Efficacité: — km/L</span>
+              </div>
+            </div>
+            <div class="table-container">
+              <table id="voyagesTable">
+                <thead>
+                  <tr>
+                    <th data-sort="chauffeur"><i class="fas fa-user"></i> Chauffeur</th>
+                    <th data-sort="camion"><i class="fas fa-truck"></i> Camion</th>
+                    <th data-sort="numeroOrdreTransport"><i class="fas fa-hashtag"></i> N° ordre</th>
+                    <th data-sort="societe"><i class="fas fa-building"></i> Sté</th>
+                    <th data-sort="villeDepart"><i class="fas fa-location-arrow"></i> Départ</th>
+                    <th data-sort="destination"><i class="fas fa-map-marker-alt"></i> Destination</th>
+                    <th data-sort="client"><i class="fas fa-user-tie"></i> Client</th>
+                    <th><i class="fas fa-cubes"></i> Marchandise</th>
+                    <th data-sort="dateDepart"><i class="fas fa-calendar-alt"></i> Date départ</th>
+                    <th><i class="fas fa-clock"></i> Arr. client</th>
+                    <th><i class="fas fa-clock"></i> Dép. client</th>
+                    <th><i class="fas fa-map-marker-alt"></i> Arr. Kribi</th>
+                    <th><i class="fas fa-calendar"></i> Positionnement</th>
+                    <th><i class="fas fa-box"></i> N° cont.</th>
+                    <th><i class="fas fa-key"></i> N° plomb</th>
+                    <th data-sort="distance"><i class="fas fa-road"></i> Dist.</th>
+                    <th data-sort="carburantDepart"><i class="fas fa-gas-pump"></i> Carb.</th>
+                    <th title="Efficacité km/L"><i class="fas fa-bolt"></i> Perf.</th>
+                    <th><i class="fas fa-file-alt"></i> Docs</th>
+                    <th><i class="fas fa-exclamation-triangle"></i> Incidents</th>
+                    <th data-sort="statut"><i class="fas fa-check-circle"></i> Statut</th>
+                    <th><i class="fas fa-cogs"></i> Actions</th>
+                  </tr>
+                </thead>
+                <tbody id="voyagesTableBody"></tbody>
+              </table>
+            </div>
+          </section>
+
+          <!-- Hidden card-view summary (visible in card mode) -->
+          <div id="cardViewSummary" style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;margin-bottom:8px">
+            <div class="summary">
+              <span id="voyageCountCard">0 voyages</span>
+              <span id="avgEfficiencyCard">Efficacité: — km/L</span>
+            </div>
+          </div>
+
+          <!-- Pagination -->
+          <div class="pagination-bar" id="paginationBar">
+            <span class="pagination-info" id="paginationInfo">—</span>
+            <div class="pagination-controls" id="paginationControls"></div>
+          </div>
+        </div>
+
+      </main>
+
+      <!-- Footer -->
+      <footer class="app-footer">
+        <span>© <span id="currentYear"></span> Kribi Inland Services &amp; UTA Cameroun SA — Kribi, Cameroun</span>
+        &nbsp;·&nbsp;
+        <span id="lastUpdate"></span>
+      </footer>
+    </div>
+
+    <!-- ====== BOTTOM NAV (mobile) ====== -->
+    <nav class="bottom-nav" aria-label="Navigation mobile">
+      <a href="index.html" class="bottom-nav-item active">
+        <i class="fas fa-home"></i>
+        <span>Accueil</span>
+      </a>
+      <a href="pre-alertes.html" class="bottom-nav-item">
+        <i class="fas fa-bell"></i>
+        <span>Alertes</span>
+      </a>
+      <button class="bottom-nav-item" id="bottomAddBtn" style="display:none">
+        <i class="fas fa-plus-circle" style="font-size:1.4rem;color:var(--secondary)"></i>
+        <span>Ajouter</span>
+      </button>
+      <a href="analytics.html" class="bottom-nav-item">
+        <i class="fas fa-chart-line"></i>
+        <span>Stats</span>
+      </a>
+      <a href="driver-report.html" class="bottom-nav-item">
+        <i class="fas fa-id-card"></i>
+        <span>Chauffeurs</span>
+      </a>
+    </nav>
+
+    <!-- ====== MODALS ====== -->
+
+    <!-- Edit trucks modal -->
+    <div id="edit-modal" class="modal">
+      <div class="modal-content">
+        <span class="close">&times;</span>
+        <h3 id="edit-trucks-title" style="margin-bottom:16px"><i class="fas fa-truck"></i> Modifier camions actifs</h3>
+        <div class="form-group">
+          <label for="trucks-input"><i class="fas fa-hashtag"></i> Nombre de camions</label>
+          <input type="number" id="trucks-input" min="0" step="1" value="0" />
+        </div>
+        <button id="save-trucks" class="btn-submit" style="margin-top:12px">
+          <i class="fas fa-save"></i> Enregistrer
+        </button>
+      </div>
+    </div>
+
+    <!-- Auth modal -->
+    <div id="auth-modal" class="modal">
+      <div class="modal-content">
+        <span class="close" data-close="auth-modal">&times;</span>
+        <h3 style="margin-bottom:20px"><i class="fas fa-lock" style="color:var(--secondary)"></i> Connexion</h3>
+        <div class="form-group" style="margin-bottom:12px">
+          <label for="authEmail"><i class="fas fa-at"></i> Email</label>
+          <input type="email" id="authEmail" placeholder="vous@exemple.com" autocomplete="email" />
+        </div>
+        <div class="form-group" style="margin-bottom:16px">
+          <label for="authPassword"><i class="fas fa-key"></i> Mot de passe</label>
+          <input type="password" id="authPassword" placeholder="••••••••" autocomplete="current-password" />
+        </div>
+        <button id="authLogin" class="btn-submit">
+          <i class="fas fa-sign-in-alt"></i> Se connecter
+        </button>
+        <p id="authError" style="color:var(--danger);display:none;font-size:0.85rem;margin-top:10px"></p>
+      </div>
+    </div>
+
+    <!-- ====== SLIDE PANEL — Add/Edit Voyage ====== -->
+    <div class="panel-overlay" id="panelOverlay"></div>
+    <div class="slide-panel" id="voyagePanel">
+      <div class="panel-header">
+        <h2 id="panelTitle"><i class="fas fa-plus-circle" style="color:var(--secondary)"></i> Nouveau voyage</h2>
+        <button class="panel-close" id="closePanelBtn" aria-label="Fermer">
+          <i class="fas fa-times"></i>
+        </button>
+      </div>
+      <div class="panel-body">
+        <!-- Invisible anchor for script.js form toggle compatibility -->
+        <div id="voyageFormWrap" aria-hidden="false" class="collapse" style="display:block">
           <form id="voyageForm">
             <div class="form-grid">
-              <!-- ── Identification du voyage ── -->
+
+              <!-- Identification -->
               <div class="form-group-section">
                 <i class="fas fa-id-badge"></i> Identification du voyage
               </div>
               <div class="form-group">
-                <label for="societe">
-                  <i class="fas fa-building"></i> Société
-                </label>
+                <label for="societe"><i class="fas fa-building"></i> Société</label>
                 <select id="societe">
                   <option value="KIS">KIS</option>
                   <option value="UTA">UTA</option>
                 </select>
               </div>
               <div class="form-group">
-                <label for="numeroOrdreTransport">
-                  <i class="fas fa-hashtag"></i> N° d'ordre de transport
-                </label>
-                <input
-                  type="text"
-                  id="numeroOrdreTransport"
-                  placeholder="Ex: OT-2025-001"
-                />
+                <label for="numeroOrdreTransport"><i class="fas fa-hashtag"></i> N° ordre transport</label>
+                <input type="text" id="numeroOrdreTransport" placeholder="Ex: OT-2025-001" />
               </div>
               <div class="form-group">
-                <label for="chauffeur"
-                  ><i class="fas fa-user"></i> Nom du chauffeur</label
-                >
-                <input type="text" id="chauffeur" required />
+                <label for="chauffeur"><i class="fas fa-user"></i> Chauffeur <span style="color:var(--danger)">*</span></label>
+                <input type="text" id="chauffeur" required placeholder="Nom complet" />
               </div>
-
               <div class="form-group">
-                <label for="camion"
-                  ><i class="fas fa-truck"></i> No. D'immatriculation</label
-                >
-                <input type="text" id="camion" required />
+                <label for="camion"><i class="fas fa-truck"></i> Immatriculation <span style="color:var(--danger)">*</span></label>
+                <input type="text" id="camion" required placeholder="Ex: LT-123-A" />
               </div>
 
-              <!-- ── Itinéraire & Marchandise ── -->
+              <!-- Itinéraire -->
               <div class="form-group-section">
                 <i class="fas fa-route"></i> Itinéraire &amp; Marchandise
               </div>
               <div class="form-group">
-                <label for="destination"
-                  ><i class="fas fa-map-marker-alt"></i> Destination</label
-                >
-                <input type="text" id="destination" />
+                <label for="villeDepart"><i class="fas fa-location-arrow"></i> Ville départ</label>
+                <input type="text" id="villeDepart" placeholder="Ex: Kribi" value="Kribi" />
               </div>
-
               <div class="form-group">
-                <label for="destinationDetail"
-                  ><i class="fas fa-location-dot"></i> Lieu précis
-                  (quartier)</label
-                >
-                <input
-                  type="text"
-                  id="destinationDetail"
-                  placeholder="Ex: Bonassama"
-                />
-                <small class="form-hint"
-                  >Sert à préciser le lieu; la distance reste calculée avec la
-                  ville.</small
-                >
+                <label for="destination"><i class="fas fa-map-marker-alt"></i> Destination</label>
+                <input type="text" id="destination" placeholder="Ex: Douala" />
               </div>
-
-              <div class="form-group full-width">
-                <label for="natureMarchandise"
-                  ><i class="fas fa-cubes"></i> Nature de la marchandise
-                  transportée</label
-                >
-                <textarea
-                  id="natureMarchandise"
-                  rows="2"
-                  placeholder="Ex: Ciment, Grumes, Conteneur 20', ..."
-                ></textarea>
-              </div>
-
               <div class="form-group">
-                <label for="villeDepart">
-                  <i class="fas fa-location-arrow"></i> Ville de départ
-                </label>
-                <input
-                  type="text"
-                  id="villeDepart"
-                  placeholder="Ex: Kribi"
-                  value="Kribi"
-                />
+                <label for="destinationDetail"><i class="fas fa-location-dot"></i> Lieu précis</label>
+                <input type="text" id="destinationDetail" placeholder="Ex: Bonassama" />
+                <small class="form-hint">Précise le quartier; distance calculée avec la ville.</small>
               </div>
-
               <div class="form-group">
-                <label for="client"
-                  ><i class="fas fa-user-tie"></i> Client</label
-                >
+                <label for="client"><i class="fas fa-user-tie"></i> Client</label>
                 <input type="text" id="client" placeholder="Nom du client" list="clientList" autocomplete="off" />
                 <datalist id="clientList"></datalist>
               </div>
-
+              <div class="form-group full-width">
+                <label for="natureMarchandise"><i class="fas fa-cubes"></i> Nature de la marchandise</label>
+                <textarea id="natureMarchandise" rows="2" placeholder="Ex: Ciment, Grumes, Conteneur 20'…"></textarea>
+              </div>
               <div class="form-group">
-                <label for="distance">
-                  <i class="fas fa-road"></i> Distance
-                </label>
-                <div style="display: flex; gap: 8px; align-items: center">
-                  <input
-                    type="number"
-                    id="distance"
-                    placeholder="km (auto si 'Ville de départ' et 'Destination')"
-                  />
-                  <button
-                    type="button"
-                    id="calcDistance"
-                    class="btn-export"
-                    title="Calculer avec les villes"
-                  >
-                    <i class="fas fa-route"></i> Calculer
+                <label for="distance"><i class="fas fa-road"></i> Distance (km)</label>
+                <div style="display:flex;gap:8px;align-items:center">
+                  <input type="number" id="distance" placeholder="km" style="flex:1" />
+                  <button type="button" id="calcDistance" class="btn-export" title="Calculer">
+                    <i class="fas fa-route"></i>
                   </button>
                 </div>
-                <small class="form-hint"
-                  >Entrez les villes puis cliquez sur Calculer, ou saisissez la
-                  distance manuellement.</small
-                >
+                <small class="form-hint">Entrez les villes puis cliquez Calculer, ou saisissez manuellement.</small>
               </div>
 
-              <!-- ── Chronologie du voyage ── -->
+              <!-- Chronologie -->
               <div class="form-group-section">
                 <i class="fas fa-clock"></i> Chronologie du voyage
               </div>
               <div class="form-group">
-                <label for="dateDepart"
-                  ><i class="fas fa-calendar-alt"></i> Date départ</label
-                >
+                <label for="dateDepart"><i class="fas fa-calendar-alt"></i> Date de départ</label>
                 <input type="datetime-local" id="dateDepart" />
               </div>
-
               <div class="form-group">
-                <label for="clientArrivalTime"
-                  ><i class="fas fa-clock"></i> Heure d'arrivée chez le
-                  client</label
-                >
+                <label for="clientArrivalTime"><i class="fas fa-clock"></i> Arrivée chez client</label>
                 <input type="datetime-local" id="clientArrivalTime" />
-                <small class="form-hint"
-                  >Peut être complété à la fin du voyage.</small
-                >
               </div>
               <div class="form-group">
-                <label for="clientDepartureTime"
-                  ><i class="fas fa-clock"></i> Heure de départ de chez le
-                  client</label
-                >
+                <label for="clientDepartureTime"><i class="fas fa-clock"></i> Départ de chez client</label>
                 <input type="datetime-local" id="clientDepartureTime" />
-                <small class="form-hint"
-                  >Peut être complété à la fin du voyage.</small
-                >
               </div>
-
               <div class="form-group">
-                <label for="kribiArrivalDate"
-                  ><i class="fas fa-map-marker-alt"></i> Date d'arrivée à
-                  Kribi</label
-                >
+                <label for="kribiArrivalDate"><i class="fas fa-map-marker-alt"></i> Arrivée à Kribi</label>
                 <input type="datetime-local" id="kribiArrivalDate" />
-                <small class="form-hint"
-                  >Peut être complété à la fin du voyage.</small
-                >
               </div>
               <div class="form-group">
-                <label for="containerPositioningDate"
-                  ><i class="fas fa-calendar"></i> Date de positionnement</label
-                >
+                <label for="containerPositioningDate"><i class="fas fa-calendar"></i> Date positionnement TC</label>
                 <input type="datetime-local" id="containerPositioningDate" />
-                <small class="form-hint"
-                  >Peut être complété à la fin du voyage.</small
-                >
               </div>
-
               <div class="form-group">
-                <label for="containerPositioningLocation"
-                  ><i class="fas fa-map-pin"></i> Lieu de positionnement du TC
-                  vide</label
-                >
+                <label for="containerPositioningLocation"><i class="fas fa-map-pin"></i> Lieu positionnement TC vide</label>
                 <input type="text" id="containerPositioningLocation" />
-                <small class="form-hint"
-                  >Peut être complété à la fin du voyage.</small
-                >
               </div>
 
-              <!-- ── Conteneur, Documents & Statut ── -->
+              <!-- Conteneur & Docs -->
               <div class="form-group-section">
                 <i class="fas fa-file-contract"></i> Conteneur, Documents &amp; Statut
               </div>
               <div class="form-group">
-                <label for="numeroConteneur"
-                  ><i class="fas fa-box"></i> Numéro de conteneur</label
-                >
+                <label for="numeroConteneur"><i class="fas fa-box"></i> N° conteneur</label>
                 <input type="text" id="numeroConteneur" />
               </div>
-
               <div class="form-group">
-                <label for="numeroPlomb"
-                  ><i class="fas fa-key"></i> Numéro du plomb</label
-                >
+                <label for="numeroPlomb"><i class="fas fa-key"></i> N° plomb</label>
                 <input type="text" id="numeroPlomb" />
               </div>
-
-              <div class="form-group full-width">
-                <label for="documentation"
-                  ><i class="fas fa-file-alt"></i> Documentations (bordereau de
-                  livraison)</label
-                >
-                <textarea id="documentation" rows="3"></textarea>
-              </div>
-
-              <div class="form-group full-width">
-                <label for="incidents"
-                  ><i class="fas fa-exclamation-triangle"></i>
-                  Incidents/Remarques</label
-                >
-                <textarea id="incidents" rows="2"></textarea>
-              </div>
-
               <div class="form-group">
-                <label for="carburantDepart"
-                  ><i class="fas fa-gas-pump"></i> Carburant départ (L)</label
-                >
-                <input type="number" id="carburantDepart" step="0.1" />
+                <label for="carburantDepart"><i class="fas fa-gas-pump"></i> Carburant départ (L)</label>
+                <input type="number" id="carburantDepart" step="0.1" placeholder="Litres" />
               </div>
-
               <div class="form-group">
-                <label for="statut"
-                  ><i class="fas fa-check-circle"></i> Statut</label
-                >
+                <label for="statut"><i class="fas fa-check-circle"></i> Statut</label>
                 <select id="statut">
                   <option value="en-cours" selected>En cours</option>
                   <option value="complet">Complet</option>
@@ -390,207 +483,135 @@
                   <option value="annule">Annulé</option>
                 </select>
               </div>
+              <div class="form-group full-width">
+                <label for="documentation"><i class="fas fa-file-alt"></i> Documentation (bordereau)</label>
+                <textarea id="documentation" rows="3"></textarea>
+              </div>
+              <div class="form-group full-width">
+                <label for="incidents"><i class="fas fa-exclamation-triangle"></i> Incidents / Remarques</label>
+                <textarea id="incidents" rows="2"></textarea>
+              </div>
             </div>
 
             <button type="submit" id="submitBtn" class="btn-submit">
-              <i class="fas fa-save"></i> Enregistrer
+              <i class="fas fa-save"></i> Enregistrer le voyage
             </button>
           </form>
         </div>
-      </section>
-
-      <section class="controls-section">
-        <div class="search-filter">
-          <div class="search-box">
-            <i class="fas fa-search"></i>
-            <input type="text" id="searchInput" placeholder="Rechercher..." />
-          </div>
-
-          <!-- Mobile toggle for filters -->
-          <button
-            id="toggleFiltersBtn"
-            class="btn-toggle filters-toggle"
-            aria-expanded="true"
-            aria-controls="filtersWrap"
-            title="Afficher/Masquer les filtres"
-          >
-            <i class="fas fa-sliders-h" aria-hidden="true"></i>
-          </button>
-
-          <div class="filters" id="filtersWrap" aria-hidden="false">
-            <select id="filterSelect">
-              <option value="chauffeur">Trier par chauffeur</option>
-              <option value="camion">Trier par camion</option>
-              <option value="dateDepart">Trier par date</option>
-              <option value="societe">Trier par société</option>
-              <option value="destination">Trier par destination</option>
-              <option value="performance">Meilleure performance</option>
-            </select>
-
-            <select id="timeFilter">
-              <option value="all">Toutes dates</option>
-              <option value="today">Aujourd'hui</option>
-              <option value="week">Cette semaine</option>
-              <option value="month">Ce mois</option>
-              <option value="custom">Plage personnalisée…</option>
-            </select>
-
-            <select id="companyFilter" title="Filtrer par société">
-              <option value="all">Toutes sociétés</option>
-              <option value="KIS">KIS</option>
-              <option value="UTA">UTA</option>
-            </select>
-
-            <select id="statusFilter" title="Filtrer par statut">
-              <option value="all">Tous statuts</option>
-              <option value="complet">Complet</option>
-              <option value="en-cours">En cours</option>
-              <option value="retard">Retard</option>
-              <option value="annule">Annulé</option>
-            </select>
-
-            <label
-              class="incomplete-filter"
-              title="Afficher uniquement les voyages incomplets"
-            >
-              <input type="checkbox" id="incompleteOnly" /> Incomplets
-              uniquement
-            </label>
-
-            <div
-              id="customRangeWrap"
-              style="
-                display: none;
-                gap: 8px;
-                align-items: center;
-                margin-left: 8px;
-              "
-            >
-              <input type="date" id="timeStartDate" />
-              <span>→</span>
-              <input type="date" id="timeEndDate" />
-            </div>
-
-            <!-- Column visibility toggles -->
-            <div class="column-toggles" title="Afficher/Masquer des colonnes">
-              <label>
-                <input type="checkbox" id="togglePerformance" checked />
-                Performance
-              </label>
-              <label>
-                <input type="checkbox" id="toggleDocs" checked /> Documentation
-              </label>
-              <label>
-                <input type="checkbox" id="toggleIncidents" checked /> Incidents
-              </label>
-            </div>
-          </div>
-        </div>
-
-        <div class="export-buttons">
-          <button id="exportExcel" class="btn-export">
-            <i class="fas fa-file-excel"></i> Export Excel
-          </button>
-          <button id="exportPDF" class="btn-export">
-            <i class="fas fa-file-pdf"></i> Export PDF
-          </button>
-          <select id="pageSizeSelect" class="page-size-select" title="Lignes par page">
-            <option value="25">25 / page</option>
-            <option value="50">50 / page</option>
-            <option value="100">100 / page</option>
-            <option value="0">Tout afficher</option>
-          </select>
-        </div>
-      </section>
-
-      <section class="table-section">
-        <div class="table-header">
-          <h2><i class="fas fa-table"></i> Historique des voyages</h2>
-          <div class="summary">
-            <span id="voyageCount">0 voyages</span>
-            <span id="avgEfficiency">Efficacité: 0.0 km/L</span>
-          </div>
-        </div>
-
-        <div class="table-container">
-          <table id="voyagesTable">
-            <thead>
-              <tr>
-                <th data-sort="chauffeur"><i class="fas fa-user"></i> Chauffeur</th>
-                <th data-sort="camion"><i class="fas fa-truck"></i> Camion</th>
-                <th data-sort="numeroOrdreTransport"><i class="fas fa-hashtag"></i> N° ordre transport</th>
-                <th data-sort="societe"><i class="fas fa-building"></i> Société</th>
-                <th data-sort="villeDepart"><i class="fas fa-location-arrow"></i> Ville départ</th>
-                <th data-sort="destination"><i class="fas fa-map-marker-alt"></i> Destination</th>
-                <th data-sort="client"><i class="fas fa-user-tie"></i> Client</th>
-                <th><i class="fas fa-cubes"></i> Nature marchandise</th>
-                <th data-sort="dateDepart"><i class="fas fa-calendar-alt"></i> Départ</th>
-                <th><i class="fas fa-clock"></i> Arrivée client</th>
-                <th><i class="fas fa-clock"></i> Départ client</th>
-                <th><i class="fas fa-map-marker-alt"></i> Arrivée Kribi</th>
-                <th><i class="fas fa-calendar"></i> Positionnement TC vide</th>
-                <th><i class="fas fa-box"></i> N° conteneur</th>
-                <th><i class="fas fa-key"></i> N° plomb</th>
-                <th data-sort="distance"><i class="fas fa-road"></i> Distance</th>
-                <th data-sort="carburantDepart"><i class="fas fa-gas-pump"></i> Carb. départ</th>
-                <th title="Efficacité = Distance / Carburant départ (km/L)"><i class="fas fa-bolt"></i> Performance</th>
-                <th><i class="fas fa-file-alt"></i> Documentation</th>
-                <th><i class="fas fa-exclamation-triangle"></i> Incidents</th>
-                <th data-sort="statut"><i class="fas fa-check-circle"></i> Statut</th>
-                <th><i class="fas fa-cogs"></i> Actions</th>
-              </tr>
-            </thead>
-            <tbody>
-              <!-- Les données seront ajoutées ici dynamiquement -->
-            </tbody>
-          </table>
-        </div>
-        <!-- Pagination -->
-        <div class="pagination-bar" id="paginationBar">
-          <span class="pagination-info" id="paginationInfo">—</span>
-          <div class="pagination-controls" id="paginationControls"></div>
-        </div>
-      </section>
-    </main>
-
-    <footer>
-      <div class="footer-container">
-        <div class="footer-logo">
-          <div class="dual-logo-small">
-            <img src="img/logo.jpg" alt="Logo KIS" class="logo-small" />
-            <img src="img/uta-logo.jpg" alt="Logo UTA" class="logo-small" />
-          </div>
-          <div>
-            <h3>Kribi Inland Services & UTA Cameroun SA</h3>
-            <p>Services de transport et logistique</p>
-          </div>
-        </div>
-
-        <div class="footer-contact">
-          <p><i class="fas fa-map-marker-alt"></i> Kribi, Cameroun</p>
-          <p><i class="fas fa-phone"></i> 657 60 08 55 / 681 23 33 07</p>
-          <p><i class="fas fa-envelope"></i> alain.tchio@kis-kribi.org</p>
-        </div>
-
-        <div class="footer-info">
-          <p>Responsable: TCHIO NGOUMO ALAIN</p>
-          <p>Fonction: Agent Logistique</p>
-          <p>Dernière mise à jour: <span id="lastUpdate"></span></p>
-          <p>
-            &copy; <span id="currentYear"></span> KIS/UTA. Tous droits réservés.
-          </p>
-        </div>
       </div>
-    </footer>
+    </div>
+
+    <!-- Hidden legacy toggle button (used by script.js) -->
+    <button id="toggleFormBtn" style="display:none" aria-expanded="false" aria-controls="voyageFormWrap"></button>
 
     <!-- Firebase -->
     <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-firestore-compat.js"></script>
 
-    <!-- Bibliothèques externes seront chargées à la demande (lazy-load) -->
-
-    <!-- Script principal -->
     <script src="script.js"></script>
+
+    <script>
+      /* ============================================================
+         UI GLUE — sidebar, chips, view toggle, slide panel
+         ============================================================ */
+
+      // Sidebar toggle
+      const sidebar    = document.getElementById('sidebar');
+      const overlay    = document.getElementById('sidebarOverlay');
+      const sidebarBtn = document.getElementById('sidebarToggle');
+
+      function openSidebar()  { sidebar.classList.add('open'); overlay.classList.add('visible'); }
+      function closeSidebar() { sidebar.classList.remove('open'); overlay.classList.remove('visible'); }
+
+      if (sidebarBtn) sidebarBtn.addEventListener('click', () => sidebar.classList.contains('open') ? closeSidebar() : openSidebar());
+      if (overlay) overlay.addEventListener('click', closeSidebar);
+
+      // Panel open/close
+      const panel        = document.getElementById('voyagePanel');
+      const panelOverlay = document.getElementById('panelOverlay');
+      const closePanelBtn= document.getElementById('closePanelBtn');
+      const addVoyageBtn = document.getElementById('addVoyageBtn');
+      const bottomAddBtn = document.getElementById('bottomAddBtn');
+      const panelTitle   = document.getElementById('panelTitle');
+
+      function openPanel(editMode) {
+        if (editMode) {
+          panelTitle.innerHTML = '<i class="fas fa-edit" style="color:var(--warning)"></i> Modifier le voyage';
+        } else {
+          panelTitle.innerHTML = '<i class="fas fa-plus-circle" style="color:var(--secondary)"></i> Nouveau voyage';
+        }
+        panel.classList.add('open');
+        panelOverlay.classList.add('visible');
+        document.body.style.overflow = 'hidden';
+      }
+
+      function closePanel() {
+        panel.classList.remove('open');
+        panelOverlay.classList.remove('visible');
+        document.body.style.overflow = '';
+      }
+
+      window.openVoyagePanel = openPanel;
+      window.closeVoyagePanel = closePanel;
+
+      if (closePanelBtn) closePanelBtn.addEventListener('click', closePanel);
+      if (panelOverlay)  panelOverlay.addEventListener('click', closePanel);
+      if (addVoyageBtn)  addVoyageBtn.addEventListener('click', () => openPanel(false));
+      if (bottomAddBtn)  bottomAddBtn.addEventListener('click', () => openPanel(false));
+
+      // View toggle (cards / table)
+      const btnCards     = document.getElementById('viewCards');
+      const btnTable     = document.getElementById('viewTable');
+      const cardView     = document.getElementById('tripsCardView');
+      const tableView    = document.getElementById('tripsTableView');
+      const cardSummary  = document.getElementById('cardViewSummary');
+
+      let currentView = localStorage.getItem('kis:view') || 'cards';
+
+      function applyView(view) {
+        currentView = view;
+        localStorage.setItem('kis:view', view);
+        if (view === 'cards') {
+          cardView.style.display  = 'grid';
+          tableView.style.display = 'none';
+          cardSummary.style.display = 'flex';
+          btnCards.classList.add('active');
+          btnTable.classList.remove('active');
+        } else {
+          cardView.style.display  = 'none';
+          tableView.style.display = 'block';
+          cardSummary.style.display = 'none';
+          btnCards.classList.remove('active');
+          btnTable.classList.add('active');
+        }
+        // Re-render in the new view
+        if (typeof renderPage === 'function') renderPage();
+      }
+
+      if (btnCards) btnCards.addEventListener('click', () => applyView('cards'));
+      if (btnTable) btnTable.addEventListener('click', () => applyView('table'));
+
+      // Initialize view
+      document.addEventListener('DOMContentLoaded', () => {
+        applyView(currentView);
+      });
+
+      // Status chips → statusFilter select
+      window.setStatusChip = function(btn) {
+        document.querySelectorAll('[data-status]').forEach(c => c.classList.remove('active'));
+        btn.classList.add('active');
+        const sel = document.getElementById('statusFilter');
+        if (sel) { sel.value = btn.dataset.status; sel.dispatchEvent(new Event('change')); }
+      };
+
+      // Company chips → companyFilter select
+      window.setCompanyChip = function(btn) {
+        document.querySelectorAll('[data-company]').forEach(c => c.classList.remove('active'));
+        btn.classList.add('active');
+        const sel = document.getElementById('companyFilter');
+        if (sel) { sel.value = btn.dataset.company; sel.dispatchEvent(new Event('change')); }
+      };
+    </script>
   </body>
 </html>

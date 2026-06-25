@@ -125,32 +125,47 @@
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
   </head>
   <body>
-    <header>
-      <div class="header-container">
-        <div class="logo-header">
-          <div class="dual-logo">
-            <div class="logo-box"><img src="img/logo.jpg" alt="Logo KIS" class="logo" /></div>
-            <div class="logo-box"><img src="img/uta-logo.jpg" alt="Logo UTA" class="logo" /></div>
-          </div>
-          <div>
-            <h1>Kribi Inland Services & United Transport Africa</h1>
-            <h3>Tableau de bord analytique</h3>
+    <!-- SIDEBAR -->
+    <aside class="sidebar" id="sidebar">
+      <div class="sidebar-logo">
+        <div class="sidebar-logos">
+          <img src="img/logo.jpg" alt="KIS" class="sidebar-logo-img" />
+          <img src="img/uta-logo.jpg" alt="UTA" class="sidebar-logo-img" />
+        </div>
+        <div class="sidebar-brand-text">
+          <span class="sidebar-brand-name">KIS / UTA</span>
+          <span class="sidebar-brand-sub">Suivi Transport</span>
+        </div>
+      </div>
+      <nav class="sidebar-nav">
+        <div class="sidebar-section-label">Navigation</div>
+        <a href="index.html" class="sidebar-link"><i class="fas fa-home"></i><span>Tableau de bord</span></a>
+        <a href="pre-alertes.html" class="sidebar-link"><i class="fas fa-bell"></i><span>Pré-alertes</span></a>
+        <a href="analytics.html" class="sidebar-link active"><i class="fas fa-chart-line"></i><span>Analytiques</span></a>
+        <a href="driver-report.html" class="sidebar-link"><i class="fas fa-id-card"></i><span>Chauffeurs</span></a>
+      </nav>
+      <div class="sidebar-footer">
+        <div class="sidebar-user">
+          <i class="fas fa-user-circle"></i>
+          <div class="sidebar-user-details">
+            <span class="sidebar-user-name">KIS/UTA</span>
+            <span class="sidebar-user-role">Analytiques</span>
           </div>
         </div>
-        <nav id="navLinks" class="nav-links">
-          <a href="index.html"><i class="fas fa-home"></i> Accueil</a>
-          <a href="pre-alertes.html"><i class="fas fa-bell"></i> Pré-alertes</a>
-          <a href="driver-report.html"><i class="fas fa-id-card"></i> Chauffeurs</a>
-          <a href="analytics.html" class="active"><i class="fas fa-chart-line"></i> Analytiques</a>
-        </nav>
-        <button class="nav-toggle" aria-label="Ouvrir le menu" aria-expanded="false"
-          onclick="var e=this.getAttribute('aria-expanded')==='true';this.setAttribute('aria-expanded',String(!e));document.getElementById('navLinks').classList.toggle('open',!e)">
-          <span></span><span></span><span></span>
-        </button>
       </div>
-    </header>
-    <main class="container">
-      <h2 style="margin-top:0"><i class="fas fa-chart-line"></i> Tableau de bord</h2>
+    </aside>
+    <div class="sidebar-overlay" id="sidebarOverlay"></div>
+
+    <!-- MAIN WRAP -->
+    <div class="main-wrap">
+      <header class="topbar">
+        <button class="topbar-menu-btn" id="sidebarToggle" aria-label="Menu"><i class="fas fa-bars"></i></button>
+        <div class="topbar-title">
+          <h1><i class="fas fa-chart-line" style="color:var(--secondary);margin-right:6px"></i>Analytiques</h1>
+        </div>
+      </header>
+      <main class="page-content">
+        <h2 style="margin-bottom:20px;color:var(--primary);display:none"><i class="fas fa-chart-line"></i> Tableau de bord</h2>
 
       <section class="controls">
         <div>
@@ -267,32 +282,26 @@
           <ul class="top-list" id="incidentsList"></ul>
         </section>
       </div>
-    </main>
-    <footer>
-      <div class="footer-container">
-        <div class="footer-logo">
-          <div class="dual-logo-small">
-            <img src="img/logo.jpg" alt="Logo KIS" class="logo-small" />
-            <img src="img/uta-logo.jpg" alt="Logo UTA" class="logo-small" />
-          </div>
-          <div>
-            <h3>Kribi Inland Services & UTA Cameroun SA</h3>
-            <p>Services de transport et logistique</p>
-          </div>
-        </div>
-        <div class="footer-contact">
-          <p><i class="fas fa-map-marker-alt"></i> Kribi, Cameroun</p>
-          <p><i class="fas fa-phone"></i> 657 60 08 55 / 681 23 33 07</p>
-          <p><i class="fas fa-envelope"></i> alain.tchio@kis-kribi.org</p>
-        </div>
-        <div class="footer-info">
-          <p>Responsable: TCHIO NGOUMO ALAIN</p>
-          <p>Fonction: Agent Logistique</p>
-          <p>&copy; <span id="footerYear"></span> KIS/UTA. Tous droits réservés.</p>
-        </div>
-      </div>
-    </footer>
-    <script>document.getElementById('footerYear').textContent = new Date().getFullYear();</script>
+      </main>
+      <footer class="app-footer">
+        <span>© <span id="footerYear"></span> Kribi Inland Services &amp; UTA Cameroun SA — Kribi, Cameroun</span>
+      </footer>
+    </div>
+
+    <!-- Bottom nav -->
+    <nav class="bottom-nav">
+      <a href="index.html" class="bottom-nav-item"><i class="fas fa-home"></i><span>Accueil</span></a>
+      <a href="pre-alertes.html" class="bottom-nav-item"><i class="fas fa-bell"></i><span>Alertes</span></a>
+      <a href="analytics.html" class="bottom-nav-item active"><i class="fas fa-chart-line"></i><span>Stats</span></a>
+      <a href="driver-report.html" class="bottom-nav-item"><i class="fas fa-id-card"></i><span>Chauffeurs</span></a>
+    </nav>
+
+    <script>
+      document.getElementById('footerYear').textContent = new Date().getFullYear();
+      const s = document.getElementById('sidebar'), o = document.getElementById('sidebarOverlay'), b = document.getElementById('sidebarToggle');
+      if(b) b.addEventListener('click', () => { s.classList.toggle('open'); o.classList.toggle('visible'); });
+      if(o) o.addEventListener('click', () => { s.classList.remove('open'); o.classList.remove('visible'); });
+    </script>
     <script src="analytics.js"></script>
   </body>
 </html>
