@@ -531,6 +531,7 @@ section.charts-grid, section.dashboard-grid {
   display: flex;
   gap: var(--sp-3);
   flex-wrap: wrap;
+  align-items: center;
 }
 
 /* ============================================================
@@ -1236,13 +1237,11 @@ footer {
   .search-box { width: 100%; min-width: 0; }
 
   .export-buttons {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
+    flex-wrap: wrap;
     gap: var(--sp-2);
-    width: 100%;
   }
 
-  .export-buttons .btn-export { justify-content: center; }
+  .export-buttons .btn-export { flex: 1 1 auto; justify-content: center; }
 
   .form-grid { grid-template-columns: 1fr; }
 
@@ -1267,8 +1266,6 @@ footer {
 @media (max-width: 480px) {
   .dashboard { grid-template-columns: 1fr 1fr; }
   .stats-card span { font-size: 1.4rem; }
-
-  .export-buttons { grid-template-columns: 1fr; }
 
   .dual-logo .logo-box { width: 32px; height: 32px; }
 

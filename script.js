@@ -11,16 +11,15 @@ const firebaseConfig = {
 // Initialisation Firebase
 try {
   if (!firebase.apps?.length) firebase.initializeApp(firebaseConfig);
-} catch {}
+} catch (e) {
+  console.error("Firebase init failed:", e);
+}
 const db = firebase.firestore();
 const auth = firebase.auth();
-// Enable offline persistence (best effort)
-firebase
-  .firestore()
-  .enablePersistence()
-  .catch(() => {
-    /* ignore */
-  });
+// Enable offline persistence — best effort, silently skipped on Safari/private browsing
+try {
+  db.enablePersistence({ synchronizeTabs: true }).catch(() => {});
+} catch (_) {}
 const voyagesCollection = db.collection("voyages");
 // Settings document reference for global app settings (e.g., active trucks)
 const settingsDocRef = db.collection("settings").doc("global");
@@ -2171,6 +2170,7 @@ function subscribeVoyages() {
         // Fallback without orderBy
         voyagesCollection.onSnapshot(handleSnapshot, (e2) => {
           console.error("Erreur onSnapshot voyages:", e2);
+          showNotification("Impossible de charger les données Firebase: " + (e2?.code || e2), "error");
           if (!initialVoyagesLoaded) {
             initialVoyagesLoaded = true;
             maybeHideLoader();
@@ -2181,6 +2181,7 @@ function subscribeVoyages() {
     console.warn("onSnapshot primary query failed, fallback:", e);
     voyagesCollection.onSnapshot(handleSnapshot, (e2) => {
       console.error("Erreur onSnapshot voyages:", e2);
+      showNotification("Impossible de charger les données Firebase: " + (e2?.code || e2), "error");
       if (!initialVoyagesLoaded) {
         initialVoyagesLoaded = true;
         maybeHideLoader();
