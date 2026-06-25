@@ -359,8 +359,8 @@ exportPDFDriverBtn?.addEventListener("click", async () => {
     const margin = 14;
     const width  = doc.internal.pageSize.getWidth();
     const height = doc.internal.pageSize.getHeight();
-    const primary   = [26, 58, 108];
-    const secondary = [44, 90, 160];
+    const primary   = [30, 64, 175]; // #1e40af
+    const secondary = [37, 99, 235]; // #2563eb
 
     async function loadImageAsDataURL(src) {
       try {

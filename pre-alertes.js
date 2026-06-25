@@ -666,7 +666,7 @@ async function exportPDF() {
     const width = doc.internal.pageSize.getWidth();
     const height = doc.internal.pageSize.getHeight();
     const margin = 14;
-    const secondary = [44, 90, 160];
+    const secondary = [37, 99, 235]; // #2563eb
 
     const items = filtered;
     const total = items.length;

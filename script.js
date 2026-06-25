@@ -1710,9 +1710,9 @@ exportPDFBtn.addEventListener("click", async () => {
     const width = doc.internal.pageSize.getWidth();
     const height = doc.internal.pageSize.getHeight();
     const margin = 14;
-    const primary = [26, 58, 108]; // #1a3a6c
-    const secondary = [44, 90, 160]; // #2c5aa0
-    const accent = [255, 107, 0]; // #ff6b00 (UTA color)
+    const primary = [30, 64, 175]; // #1e40af
+    const secondary = [37, 99, 235]; // #2563eb
+    const accent = [245, 158, 11]; // #f59e0b (amber)
 
     const voyages = computeFilteredVoyages();
     const totalTrips = voyages.length;

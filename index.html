@@ -222,6 +222,14 @@
 
         <!-- Trips View (cards or table) -->
         <div class="trips-container">
+          <!-- Summary bar (visible in card mode) -->
+          <div id="cardViewSummary" style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;margin-bottom:14px">
+            <div class="summary">
+              <span id="voyageCountCard">0 voyages</span>
+              <span id="avgEfficiencyCard">Efficacité: — km/L</span>
+            </div>
+          </div>
+
           <!-- Card view -->
           <div id="tripsCardView" class="trip-cards-grid"></div>
 
@@ -266,14 +274,6 @@
               </table>
             </div>
           </section>
-
-          <!-- Hidden card-view summary (visible in card mode) -->
-          <div id="cardViewSummary" style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;margin-bottom:8px">
-            <div class="summary">
-              <span id="voyageCountCard">0 voyages</span>
-              <span id="avgEfficiencyCard">Efficacité: — km/L</span>
-            </div>
-          </div>
 
           <!-- Pagination -->
           <div class="pagination-bar" id="paginationBar">
