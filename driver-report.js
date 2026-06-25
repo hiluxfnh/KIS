@@ -355,7 +355,7 @@ exportPDFDriverBtn?.addEventListener("click", async () => {
   try {
     const sel = applyFilters();
     const { jsPDF } = await loadJsPDF();
-    const doc    = new jsPDF("p", "mm", "a4");
+    const doc    = new jsPDF("l", "mm", "a4"); // landscape: avoids column clipping on the 9-column table
     const margin = 14;
     const width  = doc.internal.pageSize.getWidth();
     const height = doc.internal.pageSize.getHeight();

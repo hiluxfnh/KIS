@@ -662,7 +662,7 @@ function avgDocsDelay(vs) {
 async function exportPDF() {
   try {
     const { jsPDF } = await loadJsPDF();
-    const doc = new jsPDF("p", "mm", "a4");
+    const doc = new jsPDF("l", "mm", "a4"); // landscape: avoids column clipping on the 11-column table
     const width = doc.internal.pageSize.getWidth();
     const height = doc.internal.pageSize.getHeight();
     const margin = 14;
