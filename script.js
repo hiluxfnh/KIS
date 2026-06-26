@@ -702,8 +702,6 @@ function renderTable(data) {
     if (isIncomplete && voyage.statut !== "annule") row.classList.add("row-incomplete");
 
     const departFuel = typeof voyage.carburantDepart === "number" ? voyage.carburantDepart : 0;
-    const efficiency = departFuel > 0 && (voyage.distance || 0) > 0
-      ? ((voyage.distance || 0) / departFuel).toFixed(2) : "N/A";
 
     const destDisplay = (() => {
       const city = escapeHTML(voyage.destination || "");
@@ -735,7 +733,6 @@ function renderTable(data) {
       <td><code style="font-size:0.85em">${escapeHTML(voyage.numeroPlomb || "—")}</code></td>
       <td style="text-align:right;white-space:nowrap"><strong>${voyage.distance != null ? voyage.distance : 0}</strong> km</td>
       <td style="text-align:right;white-space:nowrap">${voyage.carburantDepart != null ? voyage.carburantDepart : 0} L</td>
-      <td class="${getPerformanceClass(efficiency)}" style="white-space:nowrap">${getPerformanceIcon(efficiency)} ${efficiency === "N/A" ? "N/A" : efficiency + " km/L"}</td>
       <td style="max-width:160px;white-space:normal;font-size:0.85em">${escapeHTML(voyage.documentation || "—")}</td>
       <td style="max-width:160px;white-space:normal;font-size:0.85em">${escapeHTML(voyage.incidents || "—")}</td>
       <td>${getStatusBadge(voyage.statut)} ${isIncomplete && voyage.statut !== "annule" ? '<span class="status-badge warning" style="margin-left:4px;font-size:0.75em">Incomplet</span>' : ''}</td>
@@ -840,24 +837,17 @@ function calculateStats() {
   const voyageCountCard = document.getElementById("voyageCountCard");
   if (voyageCountCard) voyageCountCard.textContent = countLabel;
 
-  // Average efficiency over currently filtered set
-  let totalEfficiency = 0;
-  let count = 0;
-
+  // Total fuel loaded across filtered trips
+  let totalFuelLoaded = 0;
   filteredVoyages.forEach((voyage) => {
-    const dep =
-      typeof voyage.carburantDepart === "number" ? voyage.carburantDepart : 0;
-    if (dep > 0 && (voyage.distance || 0) > 0) {
-      totalEfficiency += (voyage.distance || 0) / dep;
-      count++;
-    }
+    const dep = typeof voyage.carburantDepart === "number" ? voyage.carburantDepart : 0;
+    totalFuelLoaded += dep;
   });
 
-  const avgEff = count > 0 ? (totalEfficiency / count).toFixed(2) : 0;
-  const effLabel = `Efficacité: ${avgEff} km/L`;
-  if (avgEfficiencySpan) avgEfficiencySpan.textContent = effLabel;
+  const carbLabel = totalFuelLoaded > 0 ? `Carburant: ${totalFuelLoaded.toFixed(0)} L` : "Carburant: — L";
+  if (avgEfficiencySpan) avgEfficiencySpan.textContent = carbLabel;
   const avgEffCard = document.getElementById("avgEfficiencyCard");
-  if (avgEffCard) avgEffCard.textContent = effLabel;
+  if (avgEffCard) avgEffCard.textContent = carbLabel;
 
   // Statistiques par chauffeur
   driverStats = {};
@@ -1151,9 +1141,6 @@ function renderCards(data) {
     const isIncomplete = isVoyageIncomplete(voyage) && voyage.statut !== 'annule';
 
     const dep = typeof voyage.carburantDepart === 'number' ? voyage.carburantDepart : 0;
-    const efficiency = dep > 0 && (voyage.distance || 0) > 0
-      ? ((voyage.distance || 0) / dep).toFixed(1)
-      : null;
 
     const fromCity = escapeHTML(voyage.villeDepart || 'Kribi');
     const toCity   = escapeHTML(voyage.destination || '—');
@@ -1166,8 +1153,8 @@ function renderCards(data) {
 
     const companyCls = voyage.societe === 'UTA' ? 'info' : 'primary';
 
-    const perfHTML = efficiency
-      ? `<div class="trip-card-meta-item"><i class="fas fa-bolt"></i><strong class="${getPerformanceClass(efficiency)}">${efficiency} km/L</strong></div>`
+    const perfHTML = dep > 0
+      ? `<div class="trip-card-meta-item"><i class="fas fa-gas-pump"></i>${dep.toFixed(1)} L</div>`
       : '';
 
     const distHTML = voyage.distance
@@ -1717,9 +1704,9 @@ exportPDFBtn.addEventListener("click", async () => {
     const voyages = computeFilteredVoyages();
     const totalTrips = voyages.length;
     const totalDistance = sum(voyages, (v) => v.distance || 0);
-    const effVals = voyages.map(efficiencyOf).filter((x) => x);
-    const avgEff = effVals.length
-      ? effVals.reduce((a, b) => a + b, 0) / effVals.length
+    const tripsWithFuel = voyages.filter((v) => (v.carburantDepart || 0) > 0).length;
+    const avgFuelPerTrip = tripsWithFuel > 0
+      ? voyages.reduce((acc, v) => acc + (v.carburantDepart || 0), 0) / tripsWithFuel
       : 0;
     const incidentCount = voyages.reduce(
       (acc, v) => acc + ((v.incidents || "").trim() ? 1 : 0),
@@ -1867,8 +1854,8 @@ exportPDFBtn.addEventListener("click", async () => {
     drawKpi(
       colX(2),
       row1Y,
-      "Efficacité moyenne",
-      avgEff ? `${formatPlainNumber(avgEff, 2)} km/L` : "N/A",
+      "Carb. moyen/voyage",
+      avgFuelPerTrip > 0 ? `${formatPlainNumber(avgFuelPerTrip, 0)} L` : "N/A",
       secondary
     );
 
@@ -1882,20 +1869,16 @@ exportPDFBtn.addEventListener("click", async () => {
       `${formatPlainNumber(avgDistance, 0)} km`,
       secondary
     );
-    // Third KPI: Consommation moyenne (L/100 km)
+    // Third KPI: Total carburant chargé (sum of carburantDepart across all trips)
     const totalFuelUsed = voyages.reduce((acc, v) => {
       const fu = Number(v.carburantDepart ?? 0);
       return fu > 0 ? acc + fu : acc;
     }, 0);
-    const avgConsLPer100 =
-      totalDistance > 0 && totalFuelUsed > 0
-        ? (totalFuelUsed / totalDistance) * 100
-        : 0;
     drawKpi(
       colX(2),
       row2Y,
-      "Consommation moyenne (L/100 km)",
-      `${formatPlainNumber(avgConsLPer100, 2)} L/100 km`,
+      "Carburant total (L)",
+      totalFuelUsed > 0 ? `${formatPlainNumber(totalFuelUsed, 0)} L` : "— L",
       secondary
     );
 

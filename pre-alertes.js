@@ -785,6 +785,15 @@ async function exportPDF() {
     });
 
     // Table
+    const STATUS_PRE = {
+      transmis:       { label: "Transmis",      bg: [108, 117, 125] },
+      "docs-attente": { label: "Docs attente",  bg: [217, 119,   6] },
+      "docs-recues":  { label: "Docs reçues",   bg: [ 23, 162, 184] },
+      "a-retirer":    { label: "À retirer",     bg: secondary },
+      "en-livraison": { label: "En livraison",  bg: secondary },
+      livre:          { label: "Livré",          bg: [ 40, 167,  69] },
+      annule:         { label: "Annulé",         bg: [220,  53,  69] },
+    };
     const body = items.map((x) => {
       const d = computeDerived(x);
       return [
@@ -797,10 +806,11 @@ async function exportPDF() {
         d.delayDocs == null ? "" : d.delayDocs,
         formatDate(x.containerTakenDate) || "",
         formatDate(x.deliveryDate) || "",
-        x.status || "",
+        (STATUS_PRE[x.status] || { label: x.status || "—" }).label,
         (x.comments || "").slice(0, 120),
       ];
     });
+
     doc.autoTable({
       startY: chipY + 10,
       head: [
@@ -827,6 +837,7 @@ async function exportPDF() {
         overflow: "linebreak",
         lineWidth: 0.1,
       },
+      alternateRowStyles: { fillColor: [248, 250, 252] },
       columnStyles: {
         0: { cellWidth: 24 },
         1: { cellWidth: 16 },
@@ -837,11 +848,27 @@ async function exportPDF() {
         6: { cellWidth: 14, halign: "right" },
         7: { cellWidth: 20 },
         8: { cellWidth: 20 },
-        9: { cellWidth: 18 },
-        10: { cellWidth: 40 },
+        9: { cellWidth: 22, halign: "center" },
+        10: { cellWidth: 38 },
       },
       margin: { left: margin, right: margin },
       tableWidth: "wrap",
+      willDrawCell: (data) => {
+        if (data.section === "body" && data.column.index === 9) {
+          const label = String(data.cell.raw || "");
+          const found = Object.values(STATUS_PRE).find((s) => s.label === label);
+          const bg = found ? found.bg : [148, 163, 184];
+          doc.setFillColor(bg[0], bg[1], bg[2]);
+          const { x, y, width: w, height: h } = data.cell;
+          doc.roundedRect(x + 1.5, y + 1.5, w - 3, h - 3, 1.5, 1.5, "F");
+          doc.setTextColor(255);
+        }
+      },
+      didDrawCell: (data) => {
+        if (data.section === "body" && data.column.index === 9) {
+          doc.setTextColor(40);
+        }
+      },
     });
 
     // Footer
