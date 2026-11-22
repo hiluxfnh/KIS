@@ -1,76 +1,17 @@
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
-    // Allow reads to everyone for now
+    // Only the KIS editor account can change data. Email sign-up is open on
+    // Firebase by default, so "signed in" alone isn't enough here.
+    function isEditor() {
+      return request.auth != null
+        && request.auth.token.email in ['alain@gmail.com'];
+    }
+
+    // The dashboards are public read-only views for now.
     match /{document=**} {
       allow read: if true;
-    }
-
-    function isEditor() {
-      return request.auth != null && (
-        // Whitelist emails here
-        request.auth.token.email in [
-          'alain@gmail.com'
-          // , 'editor@example.com'
-        ]
-      );
-    }
-
-    // Validate voyage document shape
-    function validVoyage(data) {
-      return
-        // Required basics
-        (data.chauffeur is string) &&
-        (data.camion is string) &&
-        (data.societe in ['KIS','UTA']) &&
-        (data.statut in ['complet','en-cours','retard','annule']) &&
-
-        // Optional strings
-        (!('destination' in data) || data.destination is string) &&
-    (!('documentation' in data) || data.documentation is string) &&
-        (!('incidents' in data) || data.incidents is string) &&
-        (!('containerPositioningLocation' in data) || data.containerPositioningLocation is string) &&
-    (!('numeroOrdreTransport' in data) || data.numeroOrdreTransport is string) &&
-    (!('villeDepart' in data) || data.villeDepart is string) &&
-  (!('destinationDetail' in data) || data.destinationDetail is string) &&
-  (!('natureMarchandise' in data) || data.natureMarchandise is string) &&
-  (!('numeroConteneur' in data) || data.numeroConteneur is string) &&
-  (!('numeroPlomb' in data) || data.numeroPlomb is string) &&
-  (!('client' in data) || data.client is string) &&
-
-        // Optional numbers
-        (!('distance' in data) || (data.distance is number && data.distance >= 0)) &&
-  (!('carburantDepart' in data) || (data.carburantDepart is number && data.carburantDepart >= 0)) &&
-
-        // Optional timestamps
-        (!('dateDepart' in data) || data.dateDepart is timestamp) &&
-        (!('clientArrivalTime' in data) || data.clientArrivalTime is timestamp) &&
-        (!('clientDepartureTime' in data) || data.clientDepartureTime is timestamp) &&
-        (!('kribiArrivalDate' in data) || data.kribiArrivalDate is timestamp) &&
-        (!('containerPositioningDate' in data) || data.containerPositioningDate is timestamp);
-    }
-
-    match /voyages/{id} {
-      allow create: if isEditor() && validVoyage(request.resource.data);
-      allow update: if isEditor() && validVoyage(request.resource.data);
-      allow delete: if isEditor();
-      allow read: if true;
-    }
-
-    // Settings document for global app configuration
-    match /settings/{docId} {
-      allow read: if true;
-      allow write: if isEditor() && request.resource.data.keys().hasOnly(['activeTrucksKIS','activeTrucksUTA','updatedAt','updatedBy']) &&
-        (
-          !('activeTrucksKIS' in request.resource.data) ||
-          (request.resource.data.activeTrucksKIS is number && request.resource.data.activeTrucksKIS >= 0)
-        ) &&
-        (
-          !('activeTrucksUTA' in request.resource.data) ||
-          (request.resource.data.activeTrucksUTA is number && request.resource.data.activeTrucksUTA >= 0)
-        ) &&
-        (request.resource.data.updatedAt is timestamp) &&
-        (request.resource.data.updatedBy is string);
+      allow write: if isEditor();
     }
   }
 }
