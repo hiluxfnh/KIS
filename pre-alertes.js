@@ -13,6 +13,13 @@ try {
 const db = firebase.firestore();
 try { db.enablePersistence?.().catch(() => {}); } catch {}
 const preCol = db.collection("prealertes");
+// Login is shared with the home page, so an editor signed in there can edit here too.
+const auth = firebase.auth();
+function ensureSignedIn() {
+  if (auth.currentUser) return true;
+  notify("Connectez-vous depuis la page d'accueil pour modifier les pré-alertes.", "warning");
+  return false;
+}
 
 function notify(msg, type = "info") {
   let c = document.getElementById("notification-container");
@@ -258,6 +265,7 @@ preForm.addEventListener("submit", async (e) => {
     comments: preComments.value.trim(),
     createdAt: firebase.firestore.FieldValue.serverTimestamp(),
   };
+  if (!ensureSignedIn()) return;
   const validErr = validatePreAlerte(item);
   if (validErr) {
     notify(validErr, "warning");
@@ -571,6 +579,7 @@ function editPreAlerte(id) {
 }
 
 async function deletePreAlerte(id) {
+  if (!ensureSignedIn()) return;
   if (!confirm("Supprimer cette pré-alerte ?")) return;
   try {
     await preCol.doc(id).delete();
